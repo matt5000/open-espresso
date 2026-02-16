@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 440" width="700" height="440">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+    .title { font-size: 16px; font-weight: bold; fill: #0f172a; }
+    .label { font-size: 11px; fill: #64748b; }
+    .field { font-size: 13px; fill: #0f172a; }
+    .emphasis-text { font-size: 13px; fill: #1e40af; }
+  </style>
+  <rect width="700" height="440" fill="#f8fafc" rx="4"/>
+
+  <text x="350" y="30" text-anchor="middle" class="title">ShotRecord Data Model (LittleFS JSON)</text>
+
+  <!-- Root: ShotRecord -->
+  <rect x="240" y="48" width="220" height="36" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="350" y="71" text-anchor="middle" class="emphasis-text" font-weight="bold">ShotRecord</text>
+  <text x="350" y="100" text-anchor="middle" class="label">Stored in LittleFS as JSON files</text>
+
+  <!-- Vertical trunk -->
+  <line x1="350" y1="84" x2="350" y2="406" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Branch 1: timestamp, profile_name, duration_ms -->
+  <circle cx="350" cy="126" r="3" fill="#64748b"/>
+  <line x1="350" y1="126" x2="386" y2="126" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="386" y="110" width="298" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="400" y="131" class="mono field">timestamp, profile_name, duration_ms</text>
+
+  <!-- Branch 2: total_weight_g, total_volume_ml -->
+  <circle cx="350" cy="166" r="3" fill="#64748b"/>
+  <line x1="350" y1="166" x2="386" y2="166" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="386" y="150" width="298" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="400" y="171" class="mono field">total_weight_g, total_volume_ml</text>
+
+  <!-- Branch 3: avg/peak metrics -->
+  <circle cx="350" cy="206" r="3" fill="#64748b"/>
+  <line x1="350" y1="206" x2="386" y2="206" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="386" y="190" width="298" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="400" y="211" class="mono field">avg_temperature_c, avg_pressure_bar</text>
+
+  <!-- Branch 4: peak_pressure_bar -->
+  <circle cx="350" cy="246" r="3" fill="#64748b"/>
+  <line x1="350" y1="246" x2="386" y2="246" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="386" y="230" width="298" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="400" y="251" class="mono field">peak_pressure_bar</text>
+
+  <!-- Branch 5: datapoints -->
+  <circle cx="350" cy="296" r="3" fill="#64748b"/>
+  <line x1="350" y1="296" x2="386" y2="296" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="386" y="280" width="298" height="32" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="400" y="301" class="mono emphasis-text">datapoints</text>
+  <text x="486" y="301" class="emphasis-text">: ShotDataPoint[]</text>
+  <text x="386" y="326" class="label">Sampled every 100ms</text>
+
+  <!-- ShotDataPoint detail box (left side) -->
+  <rect x="16" y="274" width="306" height="74" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="30" y="294" class="mono" fill="#5b21b6">ShotDataPoint {</text>
+  <text x="42" y="310" class="mono" fill="#5b21b6">time_ms, temperature_c, pressure_bar,</text>
+  <text x="42" y="326" class="mono" fill="#5b21b6">flow_ml_s, weight_g,</text>
+  <text x="42" y="342" class="mono" fill="#5b21b6">target_pressure, target_flow }</text>
+  <!-- correction: make detail box taller -->
+
+  <line x1="322" y1="308" x2="386" y2="296" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Branch 6: notes -->
+  <circle cx="350" cy="400" r="3" fill="#64748b"/>
+  <line x1="350" y1="400" x2="386" y2="400" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="386" y="384" width="298" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="400" y="405" class="mono field">notes</text>
+  <text x="444" y="405" class="field">: string</text>
+
+  <!-- Legend -->
+  <text x="16" y="434" class="label">Blue boxes = array/composite types | Purple boxes = struct detail | Dashed lines = detail references</text>
+</svg>

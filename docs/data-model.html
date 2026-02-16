@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Model — Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="nav-home">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html" class="active">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Data Model</h1>
+      <p class="intro">Section 12 — Configuration, profile, and shot record data structures</p>
+      <div class="doc-meta">
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+        <span class="tag tag-green">MIT License</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- SECTION 12: Data Model -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-12">
+        <h2>12. Future State: Data Model</h2>
+
+        <h3>Profile Data Model</h3>
+        <div class="diagram-container">
+          <img src="diagrams/profile-data-model.svg" alt="Profile data model tree: ShotProfile with name, author, version, phases array, and global stop conditions" loading="lazy">
+        </div>
+
+        <h3>Configuration (replaces eepromValues_t)</h3>
+
+        <div class="diagram-container">
+          <img src="diagrams/system-config-model.svg" alt="SystemConfig data model: WiFi, temperature, PID, display, safety, and scale configuration" loading="lazy">
+        </div>
+
+        <pre><code>SystemConfig                          (stored in NVS)
+├── wifi_ssid: string
+├── wifi_password: string
+├── ble_scales_address: string
+├── display_brightness: uint8 (0-100)
+├── display_timeout_s: uint16
+├── active_profile_index: uint8
+│
+├── boiler: BoilerConfig
+│   ├── brew_temp_c: float (default: 93.0)
+│   ├── steam_temp_c: float (default: 155.0)
+│   ├── offset_temp_c: float (default: 0.0)
+│   ├── pid_kp: float
+│   ├── pid_ki: float
+│   └── pid_kd: float
+│
+├── pump: PumpConfig
+│   ├── pressure_pid_kp: float
+│   ├── pressure_pid_ki: float
+│   ├── pressure_pid_kd: float
+│   ├── flow_pid_kp: float
+│   ├── flow_pid_ki: float
+│   └── flow_pid_kd: float
+│
+├── scales: ScalesConfig
+│   ├── calibration_factor_1: float
+│   ├── calibration_factor_2: float
+│   └── predictive_enabled: bool
+│
+└── version: uint32 (schema version for migration)</code></pre>
+
+        <h3>Shot Log</h3>
+
+        <div class="diagram-container">
+          <img src="diagrams/shot-record-model.svg" alt="ShotRecord data model: timestamp, metrics, datapoints array with ShotDataPoint struct" loading="lazy">
+        </div>
+
+        <pre><code>ShotRecord                            (stored in LittleFS as JSON)
+├── timestamp: uint32 (epoch seconds)
+├── profile_name: string
+├── duration_ms: uint32
+├── total_weight_g: float
+├── total_volume_ml: float
+├── avg_temperature_c: float
+├── avg_pressure_bar: float
+├── peak_pressure_bar: float
+├── datapoints: ShotDataPoint[]       (sampled every 100ms)
+│   ├── time_ms: uint32
+│   ├── temperature_c: float
+│   ├── pressure_bar: float
+│   ├── flow_ml_s: float
+│   ├── weight_g: float
+│   ├── target_pressure: float
+│   └── target_flow: float
+└── notes: string (user annotation)</code></pre>
+
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- PAGE FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Previous and next pages">
+        <a href="safety.html" class="prev-page">
+          <span class="material-symbols-rounded icon-sm">arrow_back</span>
+          Safety
+        </a>
+        <a href="requirements.html" class="next-page">
+          Requirements
+          <span class="material-symbols-rounded icon-sm">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="'Courier New', monospace" font-size="12">
+  <title>Gaggia Classic (Pre-2015) Stock Electrical Schematic — EU 230V</title>
+  <style>
+    .wire { stroke: #333; stroke-width: 2; fill: none; }
+    .wire-live { stroke: #b33; stroke-width: 2.5; fill: none; }
+    .wire-neutral { stroke: #339; stroke-width: 2.5; fill: none; }
+    .wire-earth { stroke: #393; stroke-width: 2.5; fill: none; stroke-dasharray: 6,3; }
+    .component { fill: #f8f8f0; stroke: #333; stroke-width: 1.5; }
+    .component-safety { fill: #fff0f0; stroke: #b33; stroke-width: 2; }
+    .component-switch { fill: #f0f0ff; stroke: #333; stroke-width: 1.5; }
+    .label { font-size: 11px; fill: #333; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-bold { font-size: 11px; fill: #333; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-small { font-size: 9px; fill: #666; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .title { font-size: 18px; fill: #111; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .subtitle { font-size: 13px; fill: #555; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .legend-box { fill: #fafafa; stroke: #ccc; stroke-width: 1; }
+    .node { fill: #333; }
+    .lamp { fill: #ffe680; stroke: #b38f00; stroke-width: 1.5; }
+    .thermostat { fill: #ffe0e0; stroke: #b33; stroke-width: 1.5; }
+    .heater-fill { fill: #ffd6cc; stroke: #c44; stroke-width: 2; }
+  </style>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="#fefefe"/>
+
+  <!-- Title -->
+  <text x="600" y="35" text-anchor="middle" class="title">Gaggia Classic (Pre-2015) — Stock Electrical Schematic</text>
+  <text x="600" y="55" text-anchor="middle" class="subtitle">EU 230V Model — Unmodified Factory Wiring</text>
+
+  <!-- Legend -->
+  <rect x="20" y="70" width="280" height="95" class="legend-box" rx="4"/>
+  <text x="30" y="88" class="label-bold">Legend</text>
+  <line x1="30" y1="102" x2="70" y2="102" class="wire-live"/>
+  <text x="76" y="106" class="label">Live (L) — Brown</text>
+  <line x1="30" y1="120" x2="70" y2="120" class="wire-neutral"/>
+  <text x="76" y="124" class="label">Neutral (N) — Blue</text>
+  <line x1="30" y1="138" x2="70" y2="138" class="wire-earth"/>
+  <text x="76" y="142" class="label">Earth (E) — Green/Yellow</text>
+  <circle cx="50" cy="155" r="4" class="node"/>
+  <text x="76" y="159" class="label">Junction / connection point</text>
+
+  <!-- ==================== IEC INLET ==================== -->
+  <rect x="30" y="210" width="100" height="80" class="component" rx="4"/>
+  <text x="80" y="235" text-anchor="middle" class="label-bold">IEC C14</text>
+  <text x="80" y="250" text-anchor="middle" class="label-bold">Inlet</text>
+  <text x="80" y="268" text-anchor="middle" class="label-small">230V AC</text>
+  <!-- L, N, E labels on outlet side -->
+  <text x="135" y="225" class="label-small">L</text>
+  <text x="135" y="250" class="label-small">N</text>
+  <text x="135" y="275" class="label-small">E</text>
+
+  <!-- ==================== LIVE PATH ==================== -->
+  <!-- IEC L out -->
+  <line x1="130" y1="222" x2="190" y2="222" class="wire-live"/>
+
+  <!-- Power Switch -->
+  <rect x="190" y="205" width="90" height="35" class="component-switch" rx="4"/>
+  <text x="235" y="227" text-anchor="middle" class="label-bold">Power SW</text>
+  <text x="235" y="200" text-anchor="middle" class="label-small">SPST (0/I)</text>
+  <line x1="280" y1="222" x2="340" y2="222" class="wire-live"/>
+
+  <!-- Switched Live bus node -->
+  <circle cx="340" cy="222" r="4" class="node"/>
+  <text x="345" y="210" class="label-small">Switched Live</text>
+
+  <!-- ==================== BRANCH 1: Boiler Heater Circuit ==================== -->
+  <!-- Down from switched live to brew thermostat -->
+  <line x1="340" y1="222" x2="340" y2="320" class="wire-live"/>
+
+  <!-- Brew Thermostat -->
+  <rect x="295" y="320" width="90" height="50" class="thermostat" rx="4"/>
+  <text x="340" y="342" text-anchor="middle" class="label-bold">Brew</text>
+  <text x="340" y="356" text-anchor="middle" class="label-bold">Thermostat</text>
+  <text x="340" y="312" text-anchor="middle" class="label-small">107°C bimetal (NC)</text>
+  <text x="340" y="383" text-anchor="middle" class="label-small">Left side of boiler</text>
+
+  <!-- Brew indicator lamp (across brew thermostat) -->
+  <line x1="295" y1="335" x2="245" y2="335" class="wire"/>
+  <line x1="245" y1="335" x2="245" y2="365" class="wire"/>
+  <ellipse cx="245" cy="345" rx="12" ry="8" class="lamp"/>
+  <text x="245" y="349" text-anchor="middle" class="label-small" font-size="8">LAMP</text>
+  <line x1="245" y1="355" x2="245" y2="375" class="wire"/>
+  <line x1="245" y1="375" x2="295" y2="375" class="wire"/>
+  <text x="210" y="350" class="label-small">Brew</text>
+  <text x="210" y="362" class="label-small">Ready</text>
+
+  <!-- Brew thermostat output down to steam switch area -->
+  <line x1="340" y1="370" x2="340" y2="430" class="wire-live"/>
+
+  <!-- ==================== STEAM SWITCH (DPDT) ==================== -->
+  <rect x="280" y="430" width="210" height="70" class="component-switch" rx="4"/>
+  <text x="385" y="455" text-anchor="middle" class="label-bold">Steam Switch (DPDT)</text>
+  <text x="385" y="470" text-anchor="middle" class="label-small">Pole 1: Thermostat bypass</text>
+  <text x="385" y="482" text-anchor="middle" class="label-small">Pole 2: Solenoid enable/disable</text>
+  <text x="385" y="422" text-anchor="middle" class="label-small">Steam icon rocker</text>
+
+  <!-- Pole 1: Brew thermostat output enters left side -->
+  <!-- When OFF: passes through to steam thermostat -->
+  <!-- When ON: switched live bypasses brew thermostat to steam thermostat -->
+
+  <!-- Switched live bypass to steam switch (for ON position) -->
+  <line x1="340" y1="222" x2="460" y2="222" class="wire-live"/>
+  <line x1="460" y1="222" x2="460" y2="430" class="wire-live"/>
+  <text x="465" y="350" class="label-small" transform="rotate(90, 465, 350)">Bypass (steam ON)</text>
+
+  <!-- Steam switch output to steam thermostat -->
+  <line x1="385" y1="500" x2="385" y2="550" class="wire-live"/>
+
+  <!-- Steam Thermostat -->
+  <rect x="340" y="550" width="90" height="50" class="thermostat" rx="4"/>
+  <text x="385" y="572" text-anchor="middle" class="label-bold">Steam</text>
+  <text x="385" y="586" text-anchor="middle" class="label-bold">Thermostat</text>
+  <text x="385" y="542" text-anchor="middle" class="label-small">145°C bimetal (NC)</text>
+  <text x="385" y="613" text-anchor="middle" class="label-small">Top of boiler</text>
+
+  <!-- Steam indicator lamp (across steam thermostat) -->
+  <!-- Confirmed by Comori Coffee circuit analysis: two lamps, one per thermostat -->
+  <line x1="340" y1="565" x2="290" y2="565" class="wire"/>
+  <line x1="290" y1="565" x2="290" y2="595" class="wire"/>
+  <ellipse cx="290" cy="575" rx="12" ry="8" class="lamp"/>
+  <text x="290" y="579" text-anchor="middle" class="label-small" font-size="8">LAMP</text>
+  <line x1="290" y1="585" x2="290" y2="605" class="wire"/>
+  <line x1="290" y1="605" x2="340" y2="605" class="wire"/>
+  <text x="253" y="580" class="label-small">Steam</text>
+  <text x="253" y="592" class="label-small">Ready</text>
+
+  <!-- Steam thermostat output to boiler element -->
+  <line x1="385" y1="600" x2="385" y2="660" class="wire-live"/>
+
+  <!-- ==================== BOILER ELEMENT ==================== -->
+  <rect x="320" y="660" width="130" height="55" class="heater-fill" rx="4"/>
+  <text x="385" y="682" text-anchor="middle" class="label-bold">Boiler Heater</text>
+  <text x="385" y="697" text-anchor="middle" class="label-bold">Element</text>
+  <text x="385" y="650" text-anchor="middle" class="label-small">2× elements in series (230V)</text>
+  <text x="385" y="728" text-anchor="middle" class="label-small">~1000W EU / ~1425W US</text>
+
+  <!-- Boiler element neutral side goes right to thermal fuse path -->
+  <line x1="450" y1="687" x2="560" y2="687" class="wire-neutral"/>
+  <line x1="560" y1="687" x2="560" y2="620" class="wire-neutral"/>
+
+  <!-- ==================== NEUTRAL PATH ==================== -->
+  <!-- IEC N out -->
+  <line x1="130" y1="248" x2="160" y2="248" class="wire-neutral"/>
+  <line x1="160" y1="248" x2="160" y2="620" class="wire-neutral"/>
+
+  <!-- Thermal Fuse -->
+  <rect x="160" y="600" width="120" height="40" class="component-safety" rx="4"/>
+  <text x="220" y="618" text-anchor="middle" class="label-bold">Thermal Fuse</text>
+  <text x="220" y="632" text-anchor="middle" class="label-small">184°C, one-shot</text>
+  <text x="220" y="590" text-anchor="middle" class="label-small">Top of boiler (SAFETY)</text>
+
+  <!-- Thermal fuse to neutral bus -->
+  <line x1="280" y1="620" x2="560" y2="620" class="wire-neutral"/>
+  <circle cx="560" cy="620" r="4" class="node"/>
+  <text x="565" y="615" class="label-small">Neutral bus</text>
+
+  <!-- Neutral bus continues down to boiler -->
+  <!-- (line already drawn: 560,620 to 560,687) -->
+
+  <!-- ==================== BRANCH 2: Brew Switch → Pump + Solenoid ==================== -->
+  <!-- From switched live, go right to brew switch -->
+  <line x1="460" y1="222" x2="660" y2="222" class="wire-live"/>
+
+  <!-- Brew Switch -->
+  <rect x="660" y="205" width="90" height="35" class="component-switch" rx="4"/>
+  <text x="705" y="227" text-anchor="middle" class="label-bold">Brew SW</text>
+  <text x="705" y="200" text-anchor="middle" class="label-small">SPST (cup icon)</text>
+
+  <!-- Brew switch output -->
+  <line x1="750" y1="222" x2="830" y2="222" class="wire-live"/>
+  <circle cx="830" cy="222" r="4" class="node"/>
+
+  <!-- ==================== PUMP ==================== -->
+  <!-- From brew switch output, down to pump -->
+  <line x1="830" y1="222" x2="830" y2="340" class="wire-live"/>
+  <rect x="780" y="340" width="100" height="50" class="component" rx="4"/>
+  <text x="830" y="362" text-anchor="middle" class="label-bold">Ulka EP5</text>
+  <text x="830" y="376" text-anchor="middle" class="label-bold">Pump</text>
+  <text x="830" y="332" text-anchor="middle" class="label-small">52W vibratory</text>
+  <!-- Pump neutral -->
+  <line x1="830" y1="390" x2="830" y2="620" class="wire-neutral"/>
+  <line x1="560" y1="620" x2="830" y2="620" class="wire-neutral"/>
+  <circle cx="830" cy="620" r="4" class="node"/>
+
+  <!-- ==================== SOLENOID ==================== -->
+  <!-- From brew switch output, right to solenoid (via steam switch pole 2) -->
+  <line x1="830" y1="222" x2="1020" y2="222" class="wire-live"/>
+
+  <!-- Steam switch pole 2 indicator -->
+  <rect x="945" y="260" width="150" height="35" class="component-switch" rx="4"/>
+  <text x="1020" y="282" text-anchor="middle" class="label-bold">Steam SW Pole 2</text>
+  <text x="1020" y="255" text-anchor="middle" class="label-small">Closed when steam OFF</text>
+  <line x1="1020" y1="222" x2="1020" y2="260" class="wire-live"/>
+  <line x1="1020" y1="295" x2="1020" y2="340" class="wire-live"/>
+
+  <!-- Solenoid valve -->
+  <rect x="970" y="340" width="100" height="50" class="component" rx="4"/>
+  <text x="1020" y="362" text-anchor="middle" class="label-bold">3-Way</text>
+  <text x="1020" y="376" text-anchor="middle" class="label-bold">Solenoid</text>
+  <text x="1020" y="332" text-anchor="middle" class="label-small">AC solenoid valve</text>
+  <!-- Solenoid neutral -->
+  <line x1="1020" y1="390" x2="1020" y2="620" class="wire-neutral"/>
+  <line x1="830" y1="620" x2="1020" y2="620" class="wire-neutral"/>
+
+  <!-- ==================== POWER INDICATOR LAMP ==================== -->
+  <!-- From switched live to power lamp -->
+  <line x1="460" y1="222" x2="460" y2="130" class="wire-live"/>
+  <line x1="460" y1="130" x2="560" y2="130" class="wire-live"/>
+  <ellipse cx="580" cy="130" rx="15" ry="10" class="lamp"/>
+  <text x="580" y="134" text-anchor="middle" class="label-small" font-size="8">LAMP</text>
+  <text x="580" y="115" text-anchor="middle" class="label-small">Power indicator</text>
+  <line x1="595" y1="130" x2="660" y2="130" class="wire-neutral"/>
+  <line x1="660" y1="130" x2="660" y2="248" class="wire-neutral"/>
+  <line x1="560" y1="620" x2="560" y2="248" class="wire-neutral" style="stroke-dasharray: none;"/>
+  <!-- Connect neutral bus up -->
+  <line x1="160" y1="248" x2="660" y2="248" class="wire-neutral"/>
+  <circle cx="560" cy="248" r="4" class="node"/>
+  <circle cx="660" cy="248" r="4" class="node"/>
+
+  <!-- ==================== EARTH PATH ==================== -->
+  <line x1="130" y1="272" x2="160" y2="272" class="wire-earth"/>
+  <line x1="160" y1="272" x2="160" y2="780" class="wire-earth"/>
+  <line x1="160" y1="780" x2="600" y2="780" class="wire-earth"/>
+  <rect x="340" y="760" width="130" height="35" rx="4" fill="#e8ffe8" stroke="#393" stroke-width="1.5"/>
+  <text x="405" y="780" text-anchor="middle" class="label-bold" fill="#263">Chassis Ground</text>
+  <text x="405" y="752" text-anchor="middle" class="label-small">Ring terminal + bolt</text>
+
+  <!-- ==================== ANNOTATIONS ==================== -->
+  <!-- Boiler thermostat logic note -->
+  <rect x="700" y="430" width="280" height="120" rx="4" fill="#f8f8ff" stroke="#aab" stroke-width="1"/>
+  <text x="710" y="450" class="label-bold">Operating Modes</text>
+  <text x="710" y="468" class="label-small">Brew mode (steam SW OFF):</text>
+  <text x="710" y="481" class="label-small">  L → brew thermo (107°C) → steam thermo → heater</text>
+  <text x="710" y="497" class="label-small">Steam mode (steam SW ON):</text>
+  <text x="710" y="510" class="label-small">  L → bypasses brew thermo → steam thermo (145°C) → heater</text>
+  <text x="710" y="526" class="label-small">  Solenoid disconnected by pole 2</text>
+  <text x="710" y="542" class="label-small">Lamps light when thermostat OPENS (temp reached)</text>
+
+  <!-- Safety note -->
+  <rect x="700" y="570" width="280" height="75" rx="4" fill="#fff8f0" stroke="#c93" stroke-width="1"/>
+  <text x="710" y="590" class="label-bold" fill="#964">Safety Chain (Neutral Path)</text>
+  <text x="710" y="606" class="label-small">184°C thermal fuse in series on neutral</text>
+  <text x="710" y="619" class="label-small">One-shot: permanently opens if exceeded</text>
+  <text x="710" y="632" class="label-small">Backup: steam thermo (145°C) in series with brew</text>
+
+  <!-- Version note -->
+  <text x="600" y="860" text-anchor="middle" class="label-small">Open Espresso Project — docs/diagrams/stock-wiring.svg</text>
+  <text x="600" y="875" text-anchor="middle" class="label-small">Pre-2015 Gaggia Classic (EU 230V). Verify wire colors with multimeter before any modification.</text>
+</svg>

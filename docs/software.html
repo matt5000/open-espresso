@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Software Architecture — Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="nav-home">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html" class="active">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Software Architecture</h1>
+      <p class="intro">Display &amp; UI Architecture (Section 8) and Software Architecture (Section 9)</p>
+      <div class="doc-meta">
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+        <span class="tag tag-green">MIT License</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- SECTION 8: DISPLAY & UI ARCHITECTURE -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-8">
+        <h2>8. Future State: Display &amp; UI Architecture</h2>
+
+        <!-- 8.1 Decision -->
+        <h3 id="display-decision">Decision: SPI TFT (2.8") + Web App</h3>
+
+        <div class="decision-box">
+          <div class="decision-title">
+            <span class="material-symbols-rounded icon-sm">check_circle</span>
+            Status: DECIDED
+          </div>
+          <p>Start with the cheapest option that doesn't close any doors. Evaluate during prototyping whether to upgrade.</p>
+        </div>
+
+        <div class="diagram-container">
+          <img src="diagrams/display-ui-architecture.svg" alt="Display and web UI architecture: ESP32-S3 with SPI to ILI9341 TFT, LVGL rendering, and WiFi to phone/tablet serving web app from LittleFS" loading="lazy">
+        </div>
+
+        <!-- 8.2 Why This Approach -->
+        <h3 id="why-this-approach">Why This Approach</h3>
+        <p>This is a home-only machine on a stable WiFi network, so connectivity is not a concern. The key uncertainty is whether a 2.8" TFT is enough at the machine, or whether a phone/web UI is sufficient on its own. Starting with both &mdash; cheap TFT + web app &mdash; lets us find out.</p>
+        <p><strong>Total display hardware cost: ~$5</strong></p>
+
+        <!-- 8.3 Machine-Mounted Display -->
+        <h3 id="machine-display">Machine-Mounted Display: ILI9341 2.8" TFT</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Spec</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Controller</strong></td><td>ILI9341</td></tr>
+              <tr><td><strong>Resolution</strong></td><td>320&times;240 (QVGA)</td></tr>
+              <tr><td><strong>Size</strong></td><td>2.8" diagonal</td></tr>
+              <tr><td><strong>Interface</strong></td><td>SPI (ESP32-S3 supports up to 80 MHz; ILI9341 typically runs at 26&ndash;40 MHz write clock)</td></tr>
+              <tr><td><strong>Touch</strong></td><td>CST816 capacitive (I2C) or XPT2046 resistive (SPI)</td></tr>
+              <tr><td><strong>Cost</strong></td><td>~$5</td></tr>
+              <tr><td><strong>UI Framework</strong></td><td>LVGL v9 (C, open source)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>What it shows:</p>
+        <ul>
+          <li><strong>Idle screen:</strong> Temperature (large font, readable at arm's length), heating progress bar, ready indicator, active profile name</li>
+          <li><strong>Shot screen:</strong> Real-time pressure/flow graph, shot timer, weight, phase indicator, target vs actual overlays</li>
+          <li><strong>Minimal touch:</strong> Start/stop (physical switch preferred), profile select (swipe or tap), tare scales</li>
+          <li><strong>Profile quick-select:</strong> TFT shows up to 5 favorite profiles for fast switching. Full list available via web app. This satisfies REQ-U-003 (&le; 3 taps from idle) even with many saved profiles.</li>
+        </ul>
+
+        <h4>Physical Switch vs. Remote Control Priority</h4>
+        <p>The Gaggia's physical brew switch is wired to a GPIO input and acts as the <strong>primary authority</strong>:</p>
+        <ul>
+          <li>Physical switch ON &rarr; shot starts (regardless of software state)</li>
+          <li>Physical switch OFF &rarr; shot stops immediately (overrides any WebSocket <code>start_shot</code> command)</li>
+          <li>WebSocket <code>start_shot</code> &rarr; only honored if physical switch is already ON (switch acts as a hardware enable gate)</li>
+          <li>This means the physical switch is a hardware-level safety interlock: turning it off always stops the shot.</li>
+        </ul>
+
+        <p>What it does <strong>NOT</strong> show (use web app instead):</p>
+        <ul>
+          <li>Profile editor (too complex for 320&times;240)</li>
+          <li>PID tuning</li>
+          <li>Shot history</li>
+          <li>System settings</li>
+        </ul>
+
+        <!-- 8.4 Web App -->
+        <h3 id="web-app">Web App</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Spec</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Server</strong></td><td>ESP32 AsyncWebServer (Core 1)</td></tr>
+              <tr><td><strong>Real-time</strong></td><td>WebSocket (~20&ndash;50 ms latency on LAN)</td></tr>
+              <tr><td><strong>Storage</strong></td><td>LittleFS partition (2&ndash;4 MB for web assets)</td></tr>
+              <tr><td><strong>Framework</strong></td><td>TBD &mdash; Svelte or Preact (small bundle, good DX)</td></tr>
+              <tr><td><strong>Auth</strong></td><td>Read-only endpoints: none (open). Write/command endpoints: session token required (see below). OTA/restart/factory-reset: OTA password required.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Pages:</p>
+        <ul>
+          <li><strong>Dashboard:</strong> Live shot view (mirrors TFT but with larger, richer graphs)</li>
+          <li><strong>Profiles:</strong> Full profile editor &mdash; phase list, transition curves, stop conditions, temperature targets. Visual preview of the profile curve.</li>
+          <li><strong>History:</strong> Shot log with overlay comparison, export to CSV/JSON</li>
+          <li><strong>Settings:</strong> PID tuning with live response graph, WiFi config, BLE scales pairing, display settings</li>
+          <li><strong>Update:</strong> OTA firmware upload</li>
+        </ul>
+
+        <!-- 8.5 API Design -->
+        <h3 id="api-design">API Design (WebSocket + REST)</h3>
+        <p>The web app communicates with the ESP32 via two channels:</p>
+
+        <h4>REST API (for CRUD operations)</h4>
+<pre><code>GET    /api/profiles              # List all profiles
+GET    /api/profiles/:id          # Get single profile
+POST   /api/profiles              # Create profile
+PUT    /api/profiles/:id          # Update profile
+DELETE /api/profiles/:id          # Delete profile
+GET    /api/config                # Get system config
+PUT    /api/config                # Update system config
+GET    /api/shots                 # List shot history
+GET    /api/shots/:id             # Get shot detail with datapoints
+POST   /api/ota                   # Upload firmware binary</code></pre>
+
+        <h4>WebSocket (<code>ws://&lt;ip&gt;/ws</code>) for Real-Time Data</h4>
+<pre><code>// Server &rarr; Client: sensor data (every 100ms during shot)
+{"type": "shot_data", "t": 12300, "temp": 93.1, "pressure": 8.7,
+ "flow": 2.1, "weight": 24.3, "target_p": 9.0, "target_f": -1, "phase": 2}
+
+// Server &rarr; Client: state changes
+{"type": "state", "mode": "brewing", "ready": true, "temp": 93.0}
+
+// Client &rarr; Server: commands
+{"type": "command", "action": "tare_scales"}
+{"type": "command", "action": "set_active_profile", "id": 3}</code></pre>
+
+        <p>This same WebSocket API is what a future iOS/native app would connect to &mdash; so building the web app first doesn't lock out native apps later.</p>
+
+        <!-- 8.6 Upgrade Paths -->
+        <h3 id="upgrade-paths">Upgrade Paths (Evaluate During Prototyping)</h3>
+        <p>After living with the prototype, these are the questions and corresponding upgrades:</p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Question</th><th>If Yes</th><th>Upgrade To</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Is 2.8" too small to read during a shot?</td>
+                <td>Rarely look at it</td>
+                <td>Larger 3.5" ILI9488 (480&times;320), same SPI interface, same LVGL code. ~$8</td>
+              </tr>
+              <tr>
+                <td>Do I never look at the machine display?</td>
+                <td>Always use phone</td>
+                <td>Drop the TFT entirely. Save the SPI bus and CPU cycles.</td>
+              </tr>
+              <tr>
+                <td>Is the web app too clunky for daily use?</td>
+                <td>Want native feel</td>
+                <td>Build iOS app connecting to the same WebSocket/REST API. Web app still works for others. <strong>Note:</strong> iOS App Transport Security blocks plain HTTP/WS by default. A native iOS app requires either HTTPS/WSS on the ESP32, or a Bonjour/<code>.local</code> ATS exception.</td>
+              </tr>
+              <tr>
+                <td>Do I want a premium built-in display?</td>
+                <td>Want tablet-on-machine</td>
+                <td>Move to ESP32-P4 + 7" MIPI-DSI. Different MCU, bigger project.</td>
+              </tr>
+              <tr>
+                <td>Is the web app latency noticeable?</td>
+                <td>Shots feel laggy on phone</td>
+                <td>Acceptable &mdash; this is monitoring, not control. The TFT runs from local data with zero latency.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 8.7 Options Considered and Rejected -->
+        <h3 id="options-rejected">Options Considered and Rejected</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Option</th><th>Why Rejected</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Nextion display</strong></td>
+                <td>Proprietary, vendor lock-in, UART bottleneck, dated UI, Windows-only editor</td>
+              </tr>
+              <tr>
+                <td><strong>OLED 128&times;64</strong></td>
+                <td>Too small for a pressure graph &mdash; can only show text. If we're mounting a display, the TFT is $3 more and far more useful</td>
+              </tr>
+              <tr>
+                <td><strong>No machine display</strong></td>
+                <td>Reasonable but untested &mdash; we don't know yet if reaching for a phone every shot is annoying. The $5 TFT hedges this bet</td>
+              </tr>
+              <tr>
+                <td><strong>ESP32-P4 + 7" MIPI</strong></td>
+                <td>Overkill for a prototype. Different MCU. Custom enclosure needed. Evaluate later if the 2.8" proves insufficient</td>
+              </tr>
+              <tr>
+                <td><strong>Native iOS app (now)</strong></td>
+                <td>High effort, platform lock-in. Build the WebSocket API first, add native app later if the web app isn't enough</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 9: SOFTWARE ARCHITECTURE -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-9">
+        <h2>9. Future State: Software Architecture</h2>
+
+        <!-- 9.1 Core Principles -->
+        <h3 id="core-principles">Core Principles</h3>
+        <ol>
+          <li><strong>Single firmware image</strong> (assuming ESP32-S3 single MCU)</li>
+          <li><strong>FreeRTOS tasks with strict core affinity</strong> &mdash; real-time on Core 0, everything else on Core 1</li>
+          <li><strong>Message-passing between tasks</strong> (FreeRTOS queues, not shared globals)</li>
+          <li><strong>Testable</strong> &mdash; core logic (PID, profiles, predictive weight) in pure C++ with no hardware dependencies</li>
+          <li><strong>Safe by default</strong> &mdash; watchdog, fail-safe states, validated inputs</li>
+        </ol>
+
+        <!-- 9.2 Task Architecture -->
+        <h3 id="task-architecture">Task Architecture</h3>
+        <div class="diagram-container">
+          <img src="diagrams/task-architecture.svg" alt="FreeRTOS task architecture: Core 0 with ControlTask (5ms), DimmerISR (hardware timer), WatchdogTask; Core 1 with UITask (50ms), BLETask, PersistenceTask, connected via FreeRTOS queues" loading="lazy">
+        </div>
+
+        <!-- 9.3 Module Decomposition -->
+        <h3 id="module-decomposition">Module Decomposition</h3>
+
+        <div class="callout callout-info">
+          <span class="material-symbols-rounded icon-sm">info</span>
+          <div>
+            <strong>PlatformIO note:</strong> PlatformIO compiles <code>src/</code> recursively by default when using the Arduino framework, but some configurations require explicit <code>build_src_filter</code>. If subdirectories are not compiled, add to <code>platformio.ini</code>: <code>build_src_filter = +&lt;*&gt; +&lt;**/*.cpp&gt;</code>. Alternatively, organize modules as PlatformIO library components under <code>lib/</code> (each with its own <code>library.json</code>).
+          </div>
+        </div>
+
+        <div class="diagram-container">
+          <img src="diagrams/module-decomposition.svg" alt="Module decomposition: src/ directory with control, sensors, profile, ui, connectivity, config, safety, and test subdirectories" loading="lazy">
+        </div>
+
+<pre><code>src/
+├── main.cpp                    # App entry, task creation
+├── control/
+│   ├── control_task.h/cpp      # Main real-time control loop
+│   ├── pid.h/cpp               # PID controller (pure math, testable)
+│   ├── dimmer.h/cpp            # Zero-cross phase-angle dimmer driver
+│   ├── boiler.h/cpp            # SSR control with safety limits
+│   └── state_machine.h/cpp     # Brew/steam/idle/flush states
+│
+├── sensors/
+│   ├── sensor_manager.h/cpp    # Unified sensor reading interface
+│   ├── thermocouple.h/cpp      # MAX31855 driver
+│   ├── pressure.h/cpp          # ADS1115-based pressure transducer
+│   └── flow.h/cpp              # Hall-effect flow sensor (ISR-based)
+│
+├── profile/
+│   ├── profile.h/cpp           # Profile data structures
+│   ├── phase_profiler.h/cpp    # Phase engine (pure logic, testable)
+│   └── predictive_weight.h/cpp # Weight estimation (pure logic, testable)
+│
+├── ui/
+│   ├── display.h/cpp           # Small status display driver (OLED/TFT)
+│   ├── web_server.h/cpp        # HTTP server + static file serving
+│   └── websocket.h/cpp         # Real-time shot data streaming
+│
+├── connectivity/
+│   ├── ble_scales.h/cpp        # BLE scale abstraction
+│   ├── wifi_manager.h/cpp      # WiFi connection management
+│   └── ota.h/cpp               # Over-the-air firmware updates
+│
+├── config/
+│   ├── config.h/cpp            # Configuration schema (typed, validated)
+│   ├── storage.h/cpp           # NVS/LittleFS persistence
+│   └── migration.h/cpp         # Config version migration
+│
+├── safety/
+│   ├── watchdog.h/cpp          # Hardware watchdog management
+│   ├── fault_handler.h/cpp     # Centralized fault detection/response
+│   └── safety_limits.h         # Compile-time safety constants
+│
+└── test/
+    ├── test_pid.cpp
+    ├── test_phase_profiler.cpp
+    ├── test_predictive_weight.cpp
+    ├── test_config_migration.cpp
+    └── test_state_machine.cpp</code></pre>
+
+        <!-- 9.4 Inter-Task Communication -->
+        <h3 id="inter-task-communication">Inter-Task Communication</h3>
+        <div class="diagram-container">
+          <img src="diagrams/inter-task-queues.svg" alt="FreeRTOS inter-task queues: SensorReading, ShotDataPoint, ConfigUpdate, and ScaleReading message queues connecting ControlTask, UITask, and BLETask" loading="lazy">
+        </div>
+
+        <p>All communication uses <strong>FreeRTOS queues</strong> with bounded sizes. If a queue is full, the producer drops the oldest item (for telemetry) or blocks briefly (for commands). No shared mutable state between tasks.</p>
+
+        <div class="callout callout-info">
+          <span class="material-symbols-rounded icon-sm">info</span>
+          <div>
+            <strong>IPC mechanism rationale:</strong> FreeRTOS queues were chosen over event groups (cannot carry data), task notifications (single producer/consumer only), and stream buffers (byte-oriented, not message-oriented). Queues provide bounded, typed, thread-safe message passing with optional blocking, which matches the producer-consumer pattern between all tasks.
+          </div>
+        </div>
+
+        <!-- 9.5 System Context Diagram -->
+        <h3 id="system-context">System Context Diagram</h3>
+        <div class="diagram-container">
+          <img src="diagrams/system-context.svg" alt="System context diagram: ESP32-S3 firmware connected to Gaggia Classic hardware via sensors and actuators, to browser/phone via WiFi REST/WS, and to BLE scales via Bluetooth" loading="lazy">
+        </div>
+
+        <p>Data flows crossing the system boundary:</p>
+        <ul>
+          <li><strong>Sensors (in):</strong> Temperature (SPI/MAX31855), pressure (I2C/ADS1115), flow (GPIO/ISR)</li>
+          <li><strong>Actuators (out):</strong> SSR (GPIO), dimmer gate (GPIO), solenoid (GPIO)</li>
+          <li><strong>User input (in):</strong> Brew switch (GPIO), steam switch (GPIO), TFT touch (I2C), web commands (WiFi/WS)</li>
+          <li><strong>Display (out):</strong> TFT (SPI), web app (WiFi/HTTP+WS)</li>
+          <li><strong>BLE (in):</strong> Weight from external scales</li>
+          <li><strong>Persistence (internal):</strong> NVS (config), LittleFS (profiles, shot logs, web assets)</li>
+        </ul>
+
+        <!-- 9.6 Module Annotations -->
+        <h3 id="module-annotations">Module Annotations</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Module</th><th>RTOS Task</th><th>Pure Logic?</th><th>Dependencies</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>control/control_task</code></td>
+                <td>ControlTask (Core 0)</td>
+                <td>No (reads sensors, writes actuators)</td>
+                <td>sensors/sensor_manager, control/pid, control/dimmer, control/boiler, control/state_machine, profile/phase_profiler, profile/predictive_weight, safety/fault_handler, safety/watchdog</td>
+              </tr>
+              <tr>
+                <td><code>control/pid</code></td>
+                <td>ControlTask</td>
+                <td><strong>Yes</strong> (testable on host)</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>control/dimmer</code></td>
+                <td>ControlTask + DimmerISR</td>
+                <td>No (hardware timer, GPIO)</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>control/boiler</code></td>
+                <td>ControlTask</td>
+                <td>No (GPIO)</td>
+                <td>safety/safety_limits</td>
+              </tr>
+              <tr>
+                <td><code>control/state_machine</code></td>
+                <td>ControlTask</td>
+                <td><strong>Yes</strong> (testable on host)</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>sensors/sensor_manager</code></td>
+                <td>ControlTask</td>
+                <td>No (I2C, SPI, GPIO)</td>
+                <td>sensors/thermocouple, sensors/pressure, sensors/flow</td>
+              </tr>
+              <tr>
+                <td><code>sensors/thermocouple</code></td>
+                <td>ControlTask</td>
+                <td>No (SPI)</td>
+                <td>None (implements TemperatureSensor HAL)</td>
+              </tr>
+              <tr>
+                <td><code>sensors/pressure</code></td>
+                <td>ControlTask</td>
+                <td>No (I2C)</td>
+                <td>None (implements PressureSensor HAL)</td>
+              </tr>
+              <tr>
+                <td><code>sensors/flow</code></td>
+                <td>ControlTask (ISR)</td>
+                <td>No (GPIO interrupt)</td>
+                <td>None (implements FlowSensor HAL)</td>
+              </tr>
+              <tr>
+                <td><code>profile/phase_profiler</code></td>
+                <td>ControlTask</td>
+                <td><strong>Yes</strong> (testable on host)</td>
+                <td>profile/profile</td>
+              </tr>
+              <tr>
+                <td><code>profile/predictive_weight</code></td>
+                <td>ControlTask</td>
+                <td><strong>Yes</strong> (testable on host)</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>profile/profile</code></td>
+                <td>Shared (data struct)</td>
+                <td><strong>Yes</strong></td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>ui/display</code></td>
+                <td>UITask (Core 1)</td>
+                <td>No (SPI, LVGL)</td>
+                <td>LVGL</td>
+              </tr>
+              <tr>
+                <td><code>ui/web_server</code></td>
+                <td>UITask (Core 1)</td>
+                <td>No (WiFi)</td>
+                <td>ESPAsyncWebServer, config/storage</td>
+              </tr>
+              <tr>
+                <td><code>ui/websocket</code></td>
+                <td>UITask (Core 1)</td>
+                <td>No (WiFi)</td>
+                <td>ESPAsyncWebServer</td>
+              </tr>
+              <tr>
+                <td><code>connectivity/ble_scales</code></td>
+                <td>BLETask (Core 1)</td>
+                <td>No (BLE)</td>
+                <td>NimBLE</td>
+              </tr>
+              <tr>
+                <td><code>connectivity/wifi_manager</code></td>
+                <td>UITask (Core 1)</td>
+                <td>No (WiFi)</td>
+                <td>ESP-IDF WiFi</td>
+              </tr>
+              <tr>
+                <td><code>connectivity/ota</code></td>
+                <td>UITask (Core 1)</td>
+                <td>No (flash)</td>
+                <td>ESP-IDF OTA</td>
+              </tr>
+              <tr>
+                <td><code>config/config</code></td>
+                <td>Shared (data struct)</td>
+                <td><strong>Yes</strong></td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>config/storage</code></td>
+                <td>PersistenceTask (Core 1)</td>
+                <td>No (NVS, LittleFS)</td>
+                <td>LittleFS</td>
+              </tr>
+              <tr>
+                <td><code>config/migration</code></td>
+                <td>PersistenceTask</td>
+                <td><strong>Yes</strong> (testable on host)</td>
+                <td>config/config</td>
+              </tr>
+              <tr>
+                <td><code>safety/watchdog</code></td>
+                <td>WatchdogTask (Core 0)</td>
+                <td>No (TWDT hardware)</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><code>safety/fault_handler</code></td>
+                <td>ControlTask</td>
+                <td><strong>Yes</strong> (logic testable)</td>
+                <td>safety/safety_limits</td>
+              </tr>
+              <tr>
+                <td><code>safety/safety_limits</code></td>
+                <td>Compile-time only</td>
+                <td><strong>Yes</strong> (header only)</td>
+                <td>None</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 9.7 RTOS Task Configuration -->
+        <h3 id="rtos-task-config">RTOS Task Configuration</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Core</th>
+                <th>Priority</th>
+                <th>Stack Size</th>
+                <th>Period / Trigger</th>
+                <th>Watchdog</th>
+                <th>Creates Queues</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ControlTask</strong></td>
+                <td>0 (pinned)</td>
+                <td>24 (highest app)</td>
+                <td>8192 bytes</td>
+                <td>5 ms (200 Hz timer)</td>
+                <td>Feeds TWDT every iteration</td>
+                <td>SensorReading, ShotDataPoint</td>
+              </tr>
+              <tr>
+                <td><strong>DimmerISR</strong></td>
+                <td>0</td>
+                <td>N/A (ISR)</td>
+                <td>N/A</td>
+                <td>Zero-cross GPIO interrupt</td>
+                <td>N/A</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><strong>WatchdogTask</strong></td>
+                <td>0 (pinned)</td>
+                <td>25 (above control)</td>
+                <td>2048 bytes</td>
+                <td>100 ms</td>
+                <td>Is the watchdog manager</td>
+                <td>N/A</td>
+              </tr>
+              <tr>
+                <td><strong>UITask</strong></td>
+                <td>1 (pinned)</td>
+                <td>10</td>
+                <td>16384 bytes</td>
+                <td>50 ms (20 Hz display)</td>
+                <td>Not monitored (non-safety)</td>
+                <td>Command, ConfigUpdate</td>
+              </tr>
+              <tr>
+                <td><strong>BLETask</strong></td>
+                <td>1</td>
+                <td>8</td>
+                <td>8192 bytes</td>
+                <td>Event-driven (BLE callbacks)</td>
+                <td>Not monitored</td>
+                <td>ScaleReading</td>
+              </tr>
+              <tr>
+                <td><strong>PersistenceTask</strong></td>
+                <td>1</td>
+                <td>5 (lowest)</td>
+                <td>4096 bytes</td>
+                <td>Event-driven (queue)</td>
+                <td>Not monitored</td>
+                <td>N/A (consumes ShotDataPoint)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p><strong>Priority rationale:</strong> ControlTask must never be preempted by UI or BLE work. WatchdogTask is higher priority so it can always check ControlTask health. UITask, BLETask, and PersistenceTask are non-safety and run on Core 1 where WiFi/BLE stacks also reside.</p>
+        <p><strong>Stack size rationale:</strong> UITask needs 16 KB for LVGL rendering buffers and web server response construction. ControlTask needs 8 KB for PID computation, profile engine, and sensor reading. BLETask needs 8 KB for NimBLE stack. PersistenceTask and WatchdogTask are lightweight.</p>
+        <p><strong>ISR latency budget:</strong> The zero-cross detection ISR must fire within 100 &micro;s of the zero-cross event to maintain &lt; 1% phase-angle error at 50 Hz. The ISR body must complete in &lt; 10 &micro;s (set a flag and return). The actual triac firing is handled by a hardware timer started from the ISR.</p>
+
+        <!-- 9.8 Third-Party Library Dependencies -->
+        <h3 id="library-dependencies">Third-Party Library Dependencies</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Library</th><th>Version</th><th>License</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ESP-IDF</strong></td>
+                <td>&ge; 5.1</td>
+                <td>Apache 2.0</td>
+                <td>Base framework (WiFi, BLE, SPI, I2C, NVS, OTA, FreeRTOS)</td>
+              </tr>
+              <tr>
+                <td><strong>LVGL</strong></td>
+                <td>9.x</td>
+                <td>MIT</td>
+                <td>TFT display UI rendering</td>
+              </tr>
+              <tr>
+                <td><strong>ESPAsyncWebServer</strong></td>
+                <td>3.x</td>
+                <td>LGPL-3.0</td>
+                <td>Async HTTP/WebSocket server</td>
+              </tr>
+              <tr>
+                <td><strong>AsyncTCP</strong></td>
+                <td>3.x</td>
+                <td>LGPL-3.0</td>
+                <td>TCP layer for ESPAsyncWebServer</td>
+              </tr>
+              <tr>
+                <td><strong>NimBLE-Arduino</strong></td>
+                <td>1.4+</td>
+                <td>Apache 2.0</td>
+                <td>BLE stack (lighter than default Bluedroid)</td>
+              </tr>
+              <tr>
+                <td><strong>LittleFS</strong></td>
+                <td>(bundled with ESP-IDF)</td>
+                <td>BSD-3</td>
+                <td>Flash filesystem for profiles, shots, web assets</td>
+              </tr>
+              <tr>
+                <td><strong>ArduinoJson</strong></td>
+                <td>7.x</td>
+                <td>MIT</td>
+                <td>JSON parsing/serialization for REST API and profile files</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p><strong>License compatibility:</strong> All libraries are compatible with open-source distribution. LGPL-3.0 (ESPAsyncWebServer) requires that the library can be relinked by users, which is satisfied by providing source and build instructions.</p>
+
+        <!-- 9.9 Flash Partition Table -->
+        <h3 id="flash-partition">Flash Partition Table</h3>
+
+<pre><code># ESP32-S3 16MB Flash Layout
+# Name,     Type, SubType, Offset,   Size,     Notes
+nvs,        data, nvs,     0x9000,   0x5000,   20KB  -- config, WiFi creds, auth tokens
+otadata,    data, ota,     0xE000,   0x2000,   8KB   -- OTA state tracking
+app0,       app,  ota_0,   0x10000,  0x300000, 3MB   -- firmware image A
+app1,       app,  ota_1,   0x310000, 0x300000, 3MB   -- firmware image B (OTA target)
+littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + shot logs</code></pre>
+
+        <h4>Space Budget Within LittleFS (~10 MB)</h4>
+        <ul>
+          <li>Web app assets (HTML/CSS/JS, gzipped): ~200 KB</li>
+          <li>Shot profiles (20 &times; ~2 KB JSON): ~40 KB</li>
+          <li>Shot logs (50 &times; ~20 KB with datapoints): ~1 MB</li>
+          <li><strong>Remaining:</strong> ~8.7 MB free for future use (more shot history, custom sounds, etc.)</li>
+        </ul>
+
+        <!-- 9.10 Resource Budget -->
+        <h3 id="resource-budget">Resource Budget</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Resource</th><th>Budget</th><th>Breakdown</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>RAM (512 KB SRAM, no PSRAM)</strong></td>
+                <td>~350 KB used, ~160 KB free</td>
+                <td>ESP-IDF/WiFi/BLE stack: ~180 KB. LVGL frame buffer (320&times;240&times;2 bytes &times; 2 buffers): ~300 KB &mdash; <strong>PROBLEM: exceeds SRAM.</strong> Must use partial buffer (1/10 screen = ~15 KB) or add PSRAM. FreeRTOS tasks: ~47 KB. Application heap: ~100 KB.</td>
+              </tr>
+              <tr>
+                <td><strong>PSRAM (8 MB, if WROVER)</strong></td>
+                <td>LVGL frame buffer + web response buffers</td>
+                <td>Moves LVGL buffers to PSRAM, freeing SRAM for application heap. <strong>Recommendation: use WROVER module with PSRAM.</strong></td>
+              </tr>
+              <tr>
+                <td><strong>SPI2 bandwidth</strong></td>
+                <td>Display: 26 MHz &times; 16 bpp = 52 MB/s theoretical, ~15 FPS at 320&times;240 full redraw</td>
+                <td>Shared with nothing (dedicated bus). Adequate.</td>
+              </tr>
+              <tr>
+                <td><strong>SPI3 bandwidth</strong></td>
+                <td>MAX31855: &lt; 1 MHz, reads &lt; 1 KB/s</td>
+                <td>Shared with nothing (dedicated bus). Negligible load.</td>
+              </tr>
+              <tr>
+                <td><strong>I2C0 bandwidth</strong></td>
+                <td>CST816 touch: &lt; 10 KB/s</td>
+                <td>Dedicated bus. Negligible.</td>
+              </tr>
+              <tr>
+                <td><strong>I2C1 bandwidth</strong></td>
+                <td>ADS1115: 128 SPS &times; 2 bytes = 256 B/s</td>
+                <td>Dedicated bus. Negligible.</td>
+              </tr>
+              <tr>
+                <td><strong>WiFi/BLE coexistence</strong></td>
+                <td>ESP-IDF coexistence manager handles time-division</td>
+                <td>Configure <code>CONFIG_SW_COEXIST_ENABLE=y</code>. BLE scan windows may cause ~10 ms WiFi latency spikes. Not safety-relevant (control loop is on Core 0, WiFi/BLE on Core 1).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="material-symbols-rounded icon-sm">warning</span>
+          <div>
+            <strong>Open issue:</strong> LVGL full-screen double buffering requires ~300 KB which exceeds available SRAM on WROOM-1. Either use WROVER with PSRAM, or use partial (1/10 screen) buffering with LVGL's <code>LV_DISPLAY_RENDER_MODE_PARTIAL</code>. Partial buffering works but increases display latency. <strong>This may resolve the WROOM vs WROVER open question in favor of WROVER.</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 9: ALGORITHM SPECIFICATIONS -->
+      <!-- ================================================================ -->
+      <section class="section" id="algorithm-specs">
+        <h2>9. Software Architecture (continued)</h2>
+
+        <h3 id="algorithms">Algorithm Specifications</h3>
+
+        <!-- PID Controller -->
+        <h4 id="pid-controller">PID Controller</h4>
+
+<pre><code>Discrete-time positional PID with anti-windup:
+
+    error = setpoint - measured
+    P = Kp * error
+    I = I_prev + Ki * error * dt
+    D = Kd * (error - error_prev) / dt
+    output = P + I + D
+
+    // Output clamping
+    output = clamp(output, 0.0, max_output)
+
+    // Anti-windup: conditional integration
+    // Only accumulate integral if output is not saturated,
+    // OR if the integral term would reduce saturation.
+    if (output == clamped_output) OR (sign(error) != sign(I)):
+        I_prev = I
+    else:
+        I_prev = I_prev  // freeze integral
+
+    error_prev = error</code></pre>
+
+        <p><strong>Form rationale:</strong> Positional (not velocity) form is used because the PID output directly represents the actuator command (0&ndash;100% SSR duty or pump power). Velocity form is preferred for integrating actuators (e.g., motor position) but unnecessary here.</p>
+
+        <h4>Derivative Filter</h4>
+        <p>A first-order low-pass filter on the derivative term prevents noise amplification:</p>
+
+<pre><code>    D_filtered = alpha * D + (1 - alpha) * D_prev    // alpha = 0.1 typical</code></pre>
+
+        <h4>Cascaded Flow Control</h4>
+        <p>When a profile phase is type FLOW, the flow PID's output becomes the <em>pressure setpoint</em> for the pressure PID. This is a series cascade:</p>
+
+<pre><code>    flow_error = target_flow - measured_flow
+    pressure_setpoint = FlowPID.compute(flow_error)
+    pressure_error = pressure_setpoint - measured_pressure
+    pump_power = PressurePID.compute(pressure_error)</code></pre>
+
+        <!-- Transition Curves -->
+        <h4 id="transition-curves">Transition Curves</h4>
+        <p>The phase profiler interpolates between <code>target.start</code> and <code>target.end</code> over <code>duration_ms</code> using a normalized parameter <code>t &isin; [0, 1]</code>:</p>
+
+<pre><code>t = elapsed_ms / duration_ms    (clamped to [0, 1])
+
+INSTANT:        output = end                          (step function)
+LINEAR:         output = start + (end - start) * t
+EASE_IN:        output = start + (end - start) * t^2              (quadratic)
+EASE_OUT:       output = start + (end - start) * (1 - (1-t)^2)   (quadratic)
+EASE_IN_OUT:    output = start + (end - start) * (3t^2 - 2t^3)   (smoothstep)</code></pre>
+
+        <!-- Phase-Angle Dimmer -->
+        <h4 id="phase-angle-dimmer">Phase-Angle Dimmer</h4>
+
+<pre><code>Input:  pump_power_pct (0-100%)
+Output: triac firing delay in microseconds after zero-cross
+
+    // Convert percentage to phase angle (0 deg = full power, 180 deg = off)
+    // RMS-corrected mapping for linear perceived power:
+    phase_angle_rad = acos(2 * pump_power_pct / 100 - 1)
+    delay_us = (phase_angle_rad / pi) * half_cycle_us
+
+    // half_cycle_us = 10000 for 50Hz mains, 8333 for 60Hz
+    // Minimum delay: ~500us (triac needs time to latch)
+    // Maximum delay: half_cycle_us - 500us (must fire before next zero-cross)</code></pre>
+
+        <p><strong>Note:</strong> The RMS-corrected mapping ensures that 50% pump power delivers 50% of the RMS voltage to the motor. A linear angle mapping would result in non-linear power delivery.</p>
+
+        <!-- Predictive Weight -->
+        <h4 id="predictive-weight">Predictive Weight</h4>
+
+        <div class="callout callout-warning">
+          <span class="material-symbols-rounded icon-sm">edit_note</span>
+          <div>
+            <strong>TODO(algorithm):</strong> Document the complete predictive weight algorithm. Current description covers the heuristic thresholds but not the full computation. Must specify:
+            <ul>
+              <li>How puck resistance is computed per sample (pressure_bar / flow_ml_per_s)</li>
+              <li>What smoothing filter is applied (moving average? EMA? window size?)</li>
+              <li>Complete decision tree: initial state &rarr; monitoring &rarr; output detected &rarr; weight estimation active</li>
+              <li>How estimated weight is computed from flow integral minus puck absorption</li>
+              <li>Calibration parameters and their default values</li>
+              <li>Boundary conditions: what happens if flow sensor fails? If pressure sensor fails?</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 9: INTERACTION DIAGRAMS -->
+      <!-- ================================================================ -->
+      <section class="section" id="interaction-diagrams">
+        <h2>9. Software Architecture (continued)</h2>
+
+        <h3 id="interaction-diagrams-heading">Interaction Diagrams</h3>
+
+        <!-- Shot Lifecycle Sequence -->
+        <h4 id="shot-lifecycle">Shot Lifecycle Sequence</h4>
+
+        <div class="callout callout-warning">
+          <span class="material-symbols-rounded icon-sm">edit_note</span>
+          <div>
+            <strong>TODO(diagram):</strong> Add a sequence diagram showing the complete shot lifecycle:
+            <ol>
+              <li>User presses brew switch &rarr; GPIO interrupt &rarr; ControlTask reads switch state</li>
+              <li>ControlTask transitions state machine READY &rarr; BREWING</li>
+              <li>Profile engine starts Phase 0 &rarr; sets pump target</li>
+              <li>ControlTask reads sensors, runs PID, writes actuators (every 5 ms)</li>
+              <li>SensorReading published to queue &rarr; UITask updates TFT + WebSocket</li>
+              <li>ShotDataPoint published to queue &rarr; UITask streams to WebSocket clients</li>
+              <li>Phase stop condition met &rarr; profile engine advances to Phase 1</li>
+              <li>Global stop condition met (weight target) &rarr; state machine BREWING &rarr; DONE</li>
+              <li>Pump OFF, solenoid OPEN (3-way valve releases pressure)</li>
+              <li>ShotRecord written to LittleFS by PersistenceTask</li>
+              <li>3-second timeout &rarr; state machine DONE &rarr; IDLE</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Zero-Cross Dimmer Timing -->
+        <h4 id="zero-cross-timing">Zero-Cross Dimmer Timing</h4>
+
+        <div class="callout callout-warning">
+          <span class="material-symbols-rounded icon-sm">edit_note</span>
+          <div>
+            <strong>TODO(diagram):</strong> Add a timing diagram showing:
+            <ol>
+              <li>AC mains sine wave (50 Hz = 20 ms period, 10 ms half-cycle)</li>
+              <li>Zero-cross detector output (pulse at each zero crossing)</li>
+              <li>Zero-cross ISR fires &rarr; starts hardware timer with delay_us</li>
+              <li>Timer expires &rarr; triac gate pulse (10 &micro;s)</li>
+              <li>Triac conducts for remainder of half-cycle</li>
+              <li>Next zero-cross &rarr; triac turns off naturally &rarr; repeat</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- BLE Scale Connection -->
+        <h4 id="ble-scale-connection">BLE Scale Connection</h4>
+
+        <div class="callout callout-warning">
+          <span class="material-symbols-rounded icon-sm">edit_note</span>
+          <div>
+            <strong>TODO(diagram):</strong> Add a sequence diagram showing:
+            <ol>
+              <li>BLETask starts scan on boot</li>
+              <li>Discovers advertised device &rarr; calls <code>matchesAdvertisement()</code> on each registered driver</li>
+              <li>Matching driver found &rarr; connect &rarr; discover services/characteristics</li>
+              <li>Subscribe to weight notification characteristic</li>
+              <li>Driver sends heartbeat per schedule (varies by scale brand)</li>
+              <li>Weight notifications arrive &rarr; publish ScaleReading to queue</li>
+              <li>Disconnect detection &rarr; auto-reconnect after 5 s backoff</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- PAGE FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Previous and next pages">
+        <a href="hardware.html" class="prev-page">
+          <span class="material-symbols-rounded icon-sm">arrow_back</span>
+          Hardware
+        </a>
+        <a href="safety.html" class="next-page">
+          Next: Safety
+          <span class="material-symbols-rounded icon-sm">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 &mdash; Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso &mdash; open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

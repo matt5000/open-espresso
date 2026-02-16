@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Current State (Sections 1-6) - Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="nav-home">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html" class="active">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Current State</h1>
+      <p class="subtitle">Sections 1-6: Architecture, Hardware, Software, Protocol, Configuration, and Known Issues</p>
+      <div class="doc-meta">
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+        <span class="tag tag-amber">Prior Art Analysis</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- SECTION 1: Architecture Overview -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-1">
+        <h2>1. Architecture Overview</h2>
+
+        <p>The current Gaggiuino system uses a <strong>dual-MCU architecture</strong>:</p>
+
+        <div class="diagram-container">
+          <img src="diagrams/dual-mcu-architecture.svg" alt="Dual-MCU architecture: STM32F411CE (real-time control) connected to ESP32-S2/S3 (UI and networking) via UART at 115200 baud" loading="lazy">
+        </div>
+
+        <p><strong>Why dual MCU:</strong> The STM32 handles deterministic real-time control (PID, zero-cross dimmer timing, sensor polling) while the ESP32 handles WiFi/BLE connectivity, display rendering, and persistent storage. This split exists because the original design predates the ESP32-S3 which can handle both roles.</p>
+
+        <h3>Build System</h3>
+        <ul>
+          <li><strong>PlatformIO</strong> with custom build environments</li>
+          <li>Three build targets: <code>lego-stm32</code>, <code>lego-esp32s2</code>, <code>lego-esp32s3</code></li>
+          <li>Shared code in <code>lib/Common/</code> (compiled by both MCUs)</li>
+          <li>MCU-specific code gated by <code>#if defined(ESP32S2)</code> / <code>#if defined(ESP32S3)</code> preprocessor guards</li>
+        </ul>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 2: Hardware Topology -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-2">
+        <h2>2. Hardware Topology</h2>
+
+        <h3>Sensors</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Sensor</th>
+                <th>Interface</th>
+                <th>Purpose</th>
+                <th>Read Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Thermocouple (MAX31855)</strong></td>
+                <td>SPI</td>
+                <td>Boiler temperature</td>
+                <td>~100ms (MAX31855 conversion time)</td>
+              </tr>
+              <tr>
+                <td><strong>Pressure transducer</strong></td>
+                <td>Analog (ADS1115 ADC)</td>
+                <td>Brew pressure (0-12 bar range)</td>
+                <td>~50ms</td>
+              </tr>
+              <tr>
+                <td><strong>Flow sensor (hall-effect)</strong></td>
+                <td>GPIO interrupt</td>
+                <td>Water flow / volume</td>
+                <td>Pulse counting</td>
+              </tr>
+              <tr>
+                <td><strong>Weight (BLE scales)</strong></td>
+                <td>BLE via ESP32</td>
+                <td>Cup weight</td>
+                <td>~100ms (variable)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Actuators</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Actuator</th>
+                <th>Control Method</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Boiler SSR</strong></td>
+                <td>GPIO (bang-bang via PID)</td>
+                <td>Temperature control</td>
+              </tr>
+              <tr>
+                <td><strong>Pump (dimmer)</strong></td>
+                <td>Zero-cross phase-angle dimming</td>
+                <td>Pressure/flow control</td>
+              </tr>
+              <tr>
+                <td><strong>Solenoid valve</strong></td>
+                <td>GPIO</td>
+                <td>3-way valve (brew/backflush)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Dimmer Control (Phase-Angle)</h3>
+        <p>The pump is driven by a <strong>zero-cross detection + phase-angle dimming</strong> circuit (<code>SystemComponents::setPumpPower()</code>). The dimmer uses a triac and zero-cross detector. Power levels are set as a percentage (0-100%) mapped to phase-angle timing. This is the most timing-critical component in the system.</p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 3: Software Architecture -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-3">
+        <h2>3. Software Architecture</h2>
+
+        <h3>STM32 Side (Real-Time Control)</h3>
+        <div class="diagram-container">
+          <img src="diagrams/stm32-sw-architecture.svg" alt="STM32 software architecture tree: main loop with sensorsRead, lcdRefresh, systemHealthCheck, and state machine branches for BREW_MODE_4, FLUSH_MODE, DESCALE_MODE, and STEAM_MODE" loading="lazy">
+        </div>
+
+        <p>The STM32 main loop (<code>gaggiuino.cpp</code>) runs the following sequence:</p>
+        <ul>
+          <li><strong><code>sensorsRead()</code></strong> &mdash; Poll all sensors via ADS1115
+            <ul>
+              <li>Temperature (MAX31855 thermocouple)</li>
+              <li>Pressure (analog transducer, 0-12 bar)</li>
+              <li>Flow (hall-effect pulse counter)</li>
+            </ul>
+          </li>
+          <li><strong><code>lcdRefresh()</code></strong> &mdash; Send sensor state to ESP32 via UART</li>
+          <li><strong><code>systemHealthCheck()</code></strong> &mdash; Monitor for faults
+            <ul>
+              <li>Thermocouple fault detection</li>
+              <li>Pressure sensor fault detection</li>
+            </ul>
+          </li>
+          <li><strong>State Machine:</strong>
+            <ul>
+              <li><strong>BREW_MODE_4</strong> (espresso_profiling) &mdash; PhaseProfiler, pressure PID, flow PID, PredictiveWeight</li>
+              <li><strong>FLUSH_MODE</strong> (backflushing)</li>
+              <li><strong>DESCALE_MODE</strong> (descaling)</li>
+              <li><strong>STEAM_MODE</strong> (steam control) &mdash; temperature PID for steam setpoint</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3>ESP32 Side (UI + Connectivity)</h3>
+        <div class="diagram-container">
+          <img src="diagrams/esp32-sw-architecture.svg" alt="ESP32 software architecture tree: main loop with UART, display (Nextion), BLE scales, EEPROM management, and Web OTA branches" loading="lazy">
+        </div>
+
+        <p>The ESP32 main loop (<code>esp_comms.cpp</code>) handles:</p>
+        <ul>
+          <li><strong>UART receive/transmit</strong> &mdash; Communication with STM32</li>
+          <li><strong>Display (Nextion)</strong> &mdash; Touch display protocol
+            <ul>
+              <li>Page navigation</li>
+              <li>Profile editing UI</li>
+              <li>Shot graph rendering</li>
+            </ul>
+          </li>
+          <li><strong>BLE Scales</strong> &mdash; Bluetooth Low Energy
+            <ul>
+              <li>Acaia</li>
+              <li>Felicita</li>
+              <li>Decent</li>
+              <li>Bookoo (multiple models)</li>
+            </ul>
+          </li>
+          <li><strong>EEPROM Management</strong> &mdash; Persistent configuration
+            <ul>
+              <li><code>eepromValues_t</code> struct (entire config blob)</li>
+            </ul>
+          </li>
+          <li><strong>Web OTA</strong> &mdash; Over-the-air firmware update</li>
+        </ul>
+
+        <h3>PID Controllers</h3>
+        <p>The system uses <strong>four separate PID instances</strong> (<code>PidController</code> class):</p>
+        <ol>
+          <li><strong>Brew temperature PID</strong> &mdash; controls boiler SSR during brewing</li>
+          <li><strong>Steam temperature PID</strong> &mdash; controls boiler SSR during steaming</li>
+          <li><strong>Pressure PID</strong> &mdash; controls pump dimmer level during profiled shots</li>
+          <li><strong>Flow PID</strong> &mdash; controls pump dimmer level when profiling by flow</li>
+        </ol>
+
+        <p>The PID implementation is in <code>lib/Common/pid.h</code>. It is a basic P-I-D with:</p>
+        <ul>
+          <li>Configurable gains (Kp, Ki, Kd)</li>
+          <li>Windback (anti-windup via integral clamping)</li>
+          <li>Output clamping (0-100% for pump, 0-100% for SSR duty)</li>
+          <li>Division-by-zero guard on Kp</li>
+        </ul>
+
+        <div class="callout callout-info">
+          <span class="material-symbols-rounded" style="color: var(--color-primary);">info</span>
+          <div>
+            <strong>Cascaded Controller:</strong> The "flow PID" operates as a cascaded controller &mdash; it computes a pressure setpoint from flow error, then the pump targets that pressure. This is done by assigning the flow PID output as the pressure setpoint.
+          </div>
+        </div>
+
+        <h3>Profile Engine</h3>
+        <div class="diagram-container">
+          <img src="diagrams/profile-engine-tree.svg" alt="Profile engine tree: phases with targets, transitions (instant, linear, ease-in, ease-out, ease-in-out), stop conditions (time, pressure, flow, weight), and global stop conditions (total time, weight, volume)" loading="lazy">
+        </div>
+
+        <p>The profile engine (<code>PhaseProfiler</code> class) implements a <strong>multi-phase shot profile</strong>:</p>
+        <ul>
+          <li><strong>Phase 0: Pre-infusion</strong> (pressure or flow target)
+            <ul>
+              <li>Target transition (instant, linear, ease-in, ease-out, ease-in-out)</li>
+              <li>Stop conditions (time, pressure threshold, flow threshold, weight)</li>
+              <li>Restriction (max flow or max pressure)</li>
+            </ul>
+          </li>
+          <li><strong>Phase 1: Soak</strong> (optional hold/dwell phase)
+            <ul>
+              <li>Same structure as above</li>
+            </ul>
+          </li>
+          <li><strong>Phase 2: Ramp to extraction pressure</strong>
+            <ul>
+              <li>Transition from soak pressure to brew pressure</li>
+            </ul>
+          </li>
+          <li><strong>Phase N: ...</strong> (variable number of phases)</li>
+          <li><strong>Global Stop Conditions</strong>
+            <ul>
+              <li>Total time limit</li>
+              <li>Total weight limit</li>
+              <li>Total water pumped limit</li>
+            </ul>
+          </li>
+        </ul>
+
+        <p>Each phase can be either <code>PHASE_TYPE_PRESSURE</code> or <code>PHASE_TYPE_FLOW</code>, with a target value that transitions according to a curve. Phases advance automatically when their stop conditions are met.</p>
+
+        <h3>Predictive Weight</h3>
+        <p><code>PredictiveWeight</code> estimates when liquid output begins (without physical scales) by:</p>
+        <ol>
+          <li>Monitoring puck resistance (pressure / flow ratio)</li>
+          <li>Tracking pressure drop patterns</li>
+          <li>Using empirical thresholds (2.1 bar = headspace full, puck resistance &gt; 1100 mbar&middot;s/g where resistance = pressure / flow rate)</li>
+          <li>Force-starting after 65ml pumped</li>
+        </ol>
+        <p>This allows dose-by-weight functionality even without BLE scales connected.</p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 4: Communication Protocol -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-4">
+        <h2>4. Communication Protocol</h2>
+
+        <h3>UART Protocol (STM32 &harr; ESP32)</h3>
+        <ul>
+          <li><strong>Baud rate:</strong> 115200</li>
+          <li><strong>Format:</strong> Binary packets with markers</li>
+          <li><strong>Library:</strong> Custom <code>McuComms</code> class wrapping the <code>transfer</code> library</li>
+          <li><strong>Packet types:</strong> 12+ distinct message types</li>
+        </ul>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Message Type</th>
+                <th>Direction</th>
+                <th>Payload</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>SensorStateSnapshot</code></td>
+                <td>STM32 &rarr; ESP32</td>
+                <td>Temperature, pressure, flow, weight, pump clicks, state</td>
+              </tr>
+              <tr>
+                <td><code>Profile</code></td>
+                <td>ESP32 &rarr; STM32</td>
+                <td>Full shot profile (phases, transitions, stop conditions)</td>
+              </tr>
+              <tr>
+                <td><code>ShotSnapshot</code></td>
+                <td>STM32 &rarr; ESP32</td>
+                <td>Real-time shot data for graphing</td>
+              </tr>
+              <tr>
+                <td><code>SystemState</code></td>
+                <td>Both directions</td>
+                <td>Operational mode, tarring, settings update flags</td>
+              </tr>
+              <tr>
+                <td><code>RemoteScalesWeight</code></td>
+                <td>ESP32 &rarr; STM32</td>
+                <td>BLE scale reading</td>
+              </tr>
+              <tr>
+                <td><code>Notification</code></td>
+                <td>STM32 &rarr; ESP32</td>
+                <td>Toast notifications to display</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Nextion Display Protocol</h3>
+        <p>The ESP32 communicates with the Nextion display via UART using the Nextion instruction set:</p>
+        <ul>
+          <li>Commands terminated with <code>0xFF 0xFF 0xFF</code></li>
+          <li>Numeric values via <code>page.component.val=N</code></li>
+          <li>String values via <code>page.component.txt="string"</code></li>
+          <li>Touch events received as binary packets</li>
+        </ul>
+
+        <h3>BLE Scales Protocol</h3>
+        <p>Supports multiple scale brands via a unified <code>RemoteScales</code> abstraction:</p>
+        <ul>
+          <li><strong>Acaia:</strong> Lunar, Pearl, Pyxis (proprietary BLE protocol with heartbeat)</li>
+          <li><strong>Felicita:</strong> Arc (standard weight characteristic)</li>
+          <li><strong>Decent:</strong> DE1 scale (custom protocol)</li>
+          <li><strong>Bookoo:</strong> MiniScale, Theme (custom BLE services)</li>
+        </ul>
+        <p>Each implementation handles: connection, weight reading, taring, and heartbeat/keepalive.</p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 5: Configuration & EEPROM -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-5">
+        <h2>5. Configuration &amp; EEPROM</h2>
+
+        <h3>eepromValues_t Structure</h3>
+        <p>The entire system configuration is stored in a single flat struct (<code>eepromValues_t</code>) that is:</p>
+        <ul>
+          <li>Written to ESP32 flash as a binary blob</li>
+          <li>Transmitted over UART to STM32 on boot and on changes</li>
+          <li>~200+ fields covering all settings</li>
+        </ul>
+
+        <div class="diagram-container">
+          <img src="diagrams/eeprom-values-tree.svg" alt="eepromValues_t structure tree: system settings, boiler PID tuning, profile settings (x5 profiles), and versioning" loading="lazy">
+        </div>
+
+        <p>Key sections of the struct:</p>
+
+        <h4>System Settings</h4>
+        <ul>
+          <li><code>lcdSleep</code> &mdash; display timeout</li>
+          <li><code>warmupState</code> &mdash; enable warmup mode</li>
+          <li><code>brewDeltaState</code> &mdash; temperature compensation during brew</li>
+          <li><code>scalesF1</code> / <code>scalesF2</code> &mdash; scale calibration factors</li>
+        </ul>
+
+        <h4>Boiler PID Tuning</h4>
+        <ul>
+          <li><code>steamSetPoint</code>, <code>offsetTemp</code></li>
+          <li><code>hpwr</code>, <code>mainDivider</code>, <code>brewDivider</code> &mdash; PID gains (obfuscated names)</li>
+          <li><code>kProportional</code>, <code>kIntegral</code>, <code>kDerivative</code> &mdash; newer named gains</li>
+        </ul>
+
+        <h4>Profile Settings (x5 profiles)</h4>
+        <ul>
+          <li><code>preinfusionState</code>, <code>preinfusionBar</code>, <code>preinfusionFlowState</code></li>
+          <li><code>soakState</code>, <code>soakTimePressure</code>, <code>soakTimeFlow</code>, <code>soakKeepPressure</code></li>
+          <li><code>hotWaterFlowState</code> &mdash; for flow-profiled extraction</li>
+          <li><code>preinfusionFlowVol</code>, <code>preinfusionFlowPressureTarget</code></li>
+          <li><code>tfProfileStart</code>, <code>tfProfileEnd</code>, <code>tfProfileHold</code>, <code>tfProfileSteep</code> &mdash; temperature profiling at different shot phases</li>
+          <li><code>profilingState</code> &mdash; enable multi-phase profiling</li>
+          <li><code>phases[]</code> &mdash; array of phase configurations</li>
+          <li><code>globalStopConditions</code> &mdash; time, weight, volume limits</li>
+        </ul>
+
+        <h4>Versioning</h4>
+        <ul>
+          <li><code>versionId</code> &mdash; schema version for migration</li>
+          <li><code>EEPROM_DATA_VERSION</code> &mdash; compile-time version</li>
+        </ul>
+
+        <h3>Profile Storage</h3>
+        <p>Profiles are stored as part of the EEPROM struct. Up to 5 profiles, each with:</p>
+        <ul>
+          <li>Pre-infusion settings (pressure or flow mode)</li>
+          <li>Soak/dwell settings</li>
+          <li>Extraction phase settings</li>
+          <li>Temperature profiling per phase</li>
+          <li>Global stop conditions (weight, time, volume)</li>
+        </ul>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 6: Known Issues -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-6">
+        <h2>6. Known Issues</h2>
+
+        <p>These are architectural and code-quality issues identified through code review:</p>
+
+        <h3>Critical Safety Issues</h3>
+
+        <div class="callout callout-safety">
+          <span class="material-symbols-rounded" style="color: var(--color-danger);">warning</span>
+          <div>
+            <strong>1. No watchdog timer</strong> &mdash; If the main loop hangs, the boiler SSR stays in its last state. A stuck-on SSR with no watchdog = uncontrolled heating.
+          </div>
+        </div>
+
+        <div class="callout callout-safety">
+          <span class="material-symbols-rounded" style="color: var(--color-danger);">warning</span>
+          <div>
+            <strong>2. Temperature fault handling is incomplete</strong> &mdash; <code>systemHealthCheck()</code> detects thermocouple faults but the recovery path is unclear. The system should enter a hard fail-safe (all outputs off) on any temperature sensor failure.
+          </div>
+        </div>
+
+        <div class="callout callout-safety">
+          <span class="material-symbols-rounded" style="color: var(--color-danger);">warning</span>
+          <div>
+            <strong>3. No boiler dry-fire protection</strong> &mdash; There is no logic to detect an empty boiler. If the machine runs without water, the heating element will overheat.
+          </div>
+        </div>
+
+        <h3>Architectural Issues</h3>
+        <ol start="4">
+          <li><strong>Massive flat config struct</strong> &mdash; <code>eepromValues_t</code> is a single monolithic struct with 200+ fields, many with cryptic names (<code>hpwr</code>, <code>mainDivider</code>, <code>brewDivider</code>). No schema validation. Binary-blob serialization means any struct change breaks all saved configs.</li>
+          <li><strong>Tight coupling between MCUs</strong> &mdash; The STM32 and ESP32 share header files and must be flashed together. Version skew between the two causes undefined behavior.</li>
+          <li><strong>Global mutable state</strong> &mdash; Extensive use of global variables, especially in <code>gaggiuino.cpp</code> and <code>predictive_weight.h</code>. The <code>PredictiveWeight</code> header file defines global variables (<code>predictiveTargetReached</code>, <code>predictivePreinfusionFinishedCheck</code>) that will cause multiple-definition errors if included from more than one translation unit.</li>
+          <li><strong>No unit tests</strong> &mdash; The <code>test/</code> directory is empty. PID tuning, profile phase transitions, and predictive weight logic have zero test coverage.</li>
+          <li><strong>Inconsistent naming</strong> &mdash; Mix of <code>camelCase</code>, <code>snake_case</code>, Hungarian notation, and abbreviations. Profile fields use opaque names (<code>tfProfileStart</code> = temperature profile at start, <code>hpwr</code> = heater power? PID high power?).</li>
+        </ol>
+
+        <h3>Protocol Issues</h3>
+        <ol start="9">
+          <li><strong>UART protocol has no CRC or error correction</strong> &mdash; The <code>McuComms</code> layer uses start/end markers but no checksum. Corrupted bytes between the MCUs could cause misinterpreted commands (e.g., a corrupted pump power value).</li>
+          <li><strong>No protocol versioning</strong> &mdash; If the UART message format changes between firmware versions, there is no negotiation or version check. Flashing one MCU without the other causes silent failures.</li>
+        </ol>
+
+        <h3>Code Quality Issues</h3>
+        <ol start="11">
+          <li><strong>Header files with implementation</strong> &mdash; Multiple <code>.h</code> files contain full method implementations and global variable definitions (e.g., <code>predictive_weight.h</code>, <code>scales_handler.h</code>). This breaks the one-definition rule if headers are included in multiple translation units.</li>
+          <li><strong>Magic numbers throughout</strong> &mdash; Thresholds like <code>2.1f</code> (pressure), <code>1100.f</code> (resistance), <code>65.f</code> (ml pumped), <code>500.f</code> (resistance delta) are hardcoded without named constants or documentation of their empirical derivation.</li>
+          <li><strong>EEPROM migration is fragile</strong> &mdash; <code>eeprom_data.cpp</code> has version-specific migration code, but adding or removing a field requires careful manual migration logic. There is no schema hash or field-level versioning.</li>
+        </ol>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Page navigation">
+        <a href="DESIGN_DOCUMENT.html" class="prev-page">
+          <span class="material-symbols-rounded">arrow_back</span>
+          Home
+        </a>
+        <a href="hardware.html" class="next-page">
+          Next: Hardware
+          <span class="material-symbols-rounded">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 &mdash; Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso &mdash; open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

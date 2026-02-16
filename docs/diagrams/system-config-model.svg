@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 480" width="700" height="480">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+    .title { font-size: 16px; font-weight: bold; fill: #0f172a; }
+    .label { font-size: 11px; fill: #64748b; }
+    .field { font-size: 13px; fill: #0f172a; }
+    .emphasis-text { font-size: 13px; fill: #1e40af; }
+  </style>
+  <rect width="700" height="480" fill="#f8fafc" rx="4"/>
+
+  <text x="350" y="30" text-anchor="middle" class="title">SystemConfig Data Model (NVS Storage)</text>
+
+  <!-- Root: SystemConfig -->
+  <rect x="235" y="48" width="230" height="36" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="350" y="71" text-anchor="middle" class="emphasis-text" font-weight="bold">SystemConfig</text>
+  <text x="350" y="100" text-anchor="middle" class="label">Stored in NVS (Non-Volatile Storage)</text>
+
+  <!-- Vertical trunk -->
+  <line x1="350" y1="84" x2="350" y2="440" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Branch 1: wifi/ble fields -->
+  <circle cx="350" cy="126" r="3" fill="#64748b"/>
+  <line x1="350" y1="126" x2="390" y2="126" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="110" width="290" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="406" y="131" class="mono field">wifi_ssid</text>
+  <text x="478" y="131" class="field">,</text>
+  <text x="486" y="131" class="mono field">wifi_password</text>
+
+  <!-- Branch 2: ble_scales_address -->
+  <circle cx="350" cy="166" r="3" fill="#64748b"/>
+  <line x1="350" y1="166" x2="390" y2="166" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="150" width="290" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="406" y="171" class="mono field">ble_scales_address</text>
+
+  <!-- Branch 3: display fields -->
+  <circle cx="350" cy="206" r="3" fill="#64748b"/>
+  <line x1="350" y1="206" x2="390" y2="206" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="190" width="290" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="406" y="211" class="mono field">display_brightness</text>
+  <text x="540" y="211" class="field">,</text>
+  <text x="548" y="211" class="mono field">display_timeout_s</text>
+
+  <!-- Branch 4: active_profile_index -->
+  <circle cx="350" cy="246" r="3" fill="#64748b"/>
+  <line x1="350" y1="246" x2="390" y2="246" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="230" width="290" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="406" y="251" class="mono field">active_profile_index</text>
+
+  <!-- Branch 5: boiler -->
+  <circle cx="350" cy="290" r="3" fill="#64748b"/>
+  <line x1="350" y1="290" x2="390" y2="290" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="274" width="130" height="32" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="406" y="295" class="mono emphasis-text">boiler</text>
+  <text x="455" y="295" class="emphasis-text">: BoilerConfig</text>
+
+  <!-- BoilerConfig detail -->
+  <rect x="20" y="270" width="300" height="44" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="36" y="289" class="mono" fill="#5b21b6">brew_temp_c, steam_temp_c, offset_temp_c</text>
+  <text x="36" y="305" class="mono" fill="#5b21b6">pid_kp, pid_ki, pid_kd</text>
+  <line x1="320" y1="292" x2="390" y2="290" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Branch 6: pump -->
+  <circle cx="350" cy="340" r="3" fill="#64748b"/>
+  <line x1="350" y1="340" x2="390" y2="340" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="324" width="130" height="32" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="406" y="345" class="mono emphasis-text">pump</text>
+  <text x="446" y="345" class="emphasis-text">: PumpConfig</text>
+
+  <!-- PumpConfig detail -->
+  <rect x="20" y="322" width="300" height="44" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="36" y="341" class="mono" fill="#5b21b6">pressure_pid_kp, pressure_pid_ki, pressure_pid_kd</text>
+  <text x="36" y="357" class="mono" fill="#5b21b6">flow_pid_kp, flow_pid_ki, flow_pid_kd</text>
+  <line x1="320" y1="344" x2="390" y2="340" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Branch 7: scales -->
+  <circle cx="350" cy="390" r="3" fill="#64748b"/>
+  <line x1="350" y1="390" x2="390" y2="390" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="374" width="140" height="32" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="406" y="395" class="mono emphasis-text">scales</text>
+  <text x="452" y="395" class="emphasis-text">: ScalesConfig</text>
+
+  <!-- ScalesConfig detail -->
+  <rect x="20" y="376" width="300" height="32" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="36" y="397" class="mono" fill="#5b21b6">calibration_factor_1/2, predictive_enabled</text>
+  <line x1="320" y1="392" x2="390" y2="390" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Branch 8: version -->
+  <circle cx="350" cy="436" r="3" fill="#64748b"/>
+  <line x1="350" y1="436" x2="390" y2="436" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="390" y="420" width="290" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="406" y="441" class="mono field">version</text>
+  <text x="462" y="441" class="field">: uint32</text>
+
+  <!-- Legend -->
+  <text x="16" y="470" class="label">Blue boxes = composite sub-configs | Purple boxes = field detail | Dashed lines = detail references</text>
+</svg>

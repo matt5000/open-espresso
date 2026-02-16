@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Requirements — Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="nav-home">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html" class="active">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Requirements, FMEA, Test Plan &amp; Standards</h1>
+      <p class="intro">Sections 16-19 — Formal requirements, failure analysis, verification, and standards review</p>
+      <div class="doc-meta">
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+        <span class="tag tag-green">MIT License</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- SECTION 16: Requirements Specification -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-16">
+        <h2>16. Requirements Specification</h2>
+
+        <p>Numbered requirements for traceability. Each requirement has a unique ID, is testable, and maps to a verification method in section 18 and to the design module(s) that implement it (see traceability matrix at end of section 18).</p>
+
+        <p><strong>Requirement attributes:</strong> ID (unique), requirement text (testable "shall" statement), priority (P0=safety-critical, P1=required, P2=important, P3=nice-to-have), rationale (why this threshold/value), source (where the requirement originates), and verification method.</p>
+
+        <!-- Safety Requirements -->
+        <h3 id="safety-requirements">Safety Requirements</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Rationale</th><th>Source</th><th>Verification</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>REQ-S-001</strong></td>
+                <td>The system shall include a hardware thermal fuse (184-192 &deg;C) wired in series with the boiler heating element, independent of all software and electronics.</td>
+                <td>P0</td>
+                <td>Stock thermostats are removed for PID control; thermal fuse replaces this safety layer. 190 &deg;C is above max steam temp (165 &deg;C) but below aluminum boiler damage threshold.</td>
+                <td>IEC 60335-2-15</td>
+                <td>T-S-001</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-002</strong></td>
+                <td>On MCU power-on or watchdog reset, all actuator outputs (SSR, dimmer, solenoid) shall default to OFF within 1ms.</td>
+                <td>P0</td>
+                <td>Prevents actuators from being in an unknown state during boot or after a crash.</td>
+                <td>IEC 61508</td>
+                <td>T-S-002</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-003</strong></td>
+                <td>The boiler SSR shall be disabled within 100ms of detecting a thermocouple fault (open, short, or out-of-range).</td>
+                <td>P0</td>
+                <td>Without temperature feedback, boiler cannot be safely controlled. 100ms is 2x the sensor read period.</td>
+                <td>IEC 61508</td>
+                <td>T-S-003</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-004</strong></td>
+                <td>The boiler SSR shall be disabled if boiler temperature exceeds 170 &deg;C (software limit).</td>
+                <td>P0</td>
+                <td>170 &deg;C provides margin: above steam max (165 &deg;C) and below thermal fuse trip (184 &deg;C).</td>
+                <td>IEC 60335-2-15</td>
+                <td>T-S-004</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-005</strong></td>
+                <td>The pump shall be stopped and solenoid opened if pressure exceeds 13 bar (software limit).</td>
+                <td>P0</td>
+                <td>Stock OPV is set to 9 bar; 13 bar provides margin for sensor error while protecting fittings. ADS1115 sensor range is 0-12 bar.</td>
+                <td>Safety analysis</td>
+                <td>T-S-005</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-006</strong></td>
+                <td>The hardware watchdog shall reset the MCU if the control loop fails to feed it within 500ms.</td>
+                <td>P0</td>
+                <td>500ms timeout allows 5 missed 100ms feeds, providing tolerance for transient delays without reducing safety margin.</td>
+                <td>IEC 61508</td>
+                <td>T-S-006</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-007</strong></td>
+                <td>The boiler SSR shall be disabled after 20 minutes of continuous heating.</td>
+                <td>P1</td>
+                <td>Protects against forgotten-on scenarios. Normal brew cycle is &lt; 2 minutes; steam is &lt; 5 minutes.</td>
+                <td>Safety analysis</td>
+                <td>T-S-007</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-008</strong></td>
+                <td>The system shall detect a stuck-on SSR (temperature rising &gt; 5 &deg;C after SSR off command within 3s) and enter FAULT state.</td>
+                <td>P1</td>
+                <td>SSR failure mode (shorted thyristor) causes continuous heating. 3s detection window balances speed vs thermal inertia false positives.</td>
+                <td>FMEA (section 17)</td>
+                <td>T-S-008</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-009</strong></td>
+                <td>All actuator GPIO pins shall have external 10k&Omega; pull-down resistors to ensure safe state when MCU is in reset or unpowered.</td>
+                <td>P0</td>
+                <td>ESP32-S3 GPIOs are high-impedance on reset; pull-downs guarantee actuators OFF even with no firmware running.</td>
+                <td>IEC 61508</td>
+                <td>T-S-002</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-010</strong></td>
+                <td>The chassis earth connection shall not be interrupted or degraded by the modification. Earth continuity shall be &lt; 0.1 &Omega;.</td>
+                <td>P0</td>
+                <td>Gaggia Classic is Class I (protective earth). Any modification that breaks the earth path creates electrocution risk.</td>
+                <td>IEC 60335-1</td>
+                <td>T-S-009</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-011</strong></td>
+                <td>High-voltage (mains) and low-voltage (signal) wiring shall be physically separated inside the machine.</td>
+                <td>P1</td>
+                <td>Prevents induced noise on signal wires and reduces risk of insulation failure causing signal lines to contact mains.</td>
+                <td>EMC / safety best practice</td>
+                <td>T-S-010</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-S-012</strong></td>
+                <td>An EMI filter shall be installed on the AC dimmer input to reduce conducted emissions.</td>
+                <td>P1</td>
+                <td>Phase-angle dimming generates significant conducted EMI that can affect other electronics on the same circuit.</td>
+                <td>EMC best practice</td>
+                <td>Inspection</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Functional Requirements -->
+        <h3 id="functional-requirements">Functional Requirements</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Source</th><th>Verification</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>REQ-F-001</strong></td><td>The system shall control boiler temperature to within &plusmn;1 &deg;C of the setpoint at steady state.</td><td>P1</td><td>User need (consistent brew temp)</td><td>T-F-001</td></tr>
+              <tr><td><strong>REQ-F-002</strong></td><td>The system shall control brew pressure to within &plusmn;0.5 bar of the profile target during extraction.</td><td>P1</td><td>User need (profile accuracy)</td><td>T-F-002</td></tr>
+              <tr><td><strong>REQ-F-003</strong></td><td>The system shall execute multi-phase shot profiles with up to 10 phases, each with configurable type (pressure/flow), target transition, and stop conditions.</td><td>P1</td><td>Legacy feature parity</td><td>T-F-003</td></tr>
+              <tr><td><strong>REQ-F-004</strong></td><td>The system shall advance to the next profile phase when any configured stop condition is met.</td><td>P1</td><td>Profile engine design</td><td>T-F-003</td></tr>
+              <tr><td><strong>REQ-F-005</strong></td><td>The system shall terminate the shot when any global stop condition is met (time, weight, volume).</td><td>P1</td><td>Profile engine design</td><td>T-F-003</td></tr>
+              <tr><td><strong>REQ-F-006</strong></td><td>The system shall read thermocouple temperature at &ge; 10 Hz.</td><td>P1</td><td>MAX31855 hardware limit (REQ-P-002)</td><td>T-F-011</td></tr>
+              <tr><td><strong>REQ-F-007</strong></td><td>The system shall read pressure at &ge; 10 Hz.</td><td>P1</td><td>PID control minimum</td><td>T-F-011</td></tr>
+              <tr><td><strong>REQ-F-008</strong></td><td>The system shall read flow rate continuously via interrupt-driven pulse counting.</td><td>P1</td><td>Flow profiling accuracy</td><td>T-F-011</td></tr>
+              <tr><td><strong>REQ-F-009</strong></td><td>The system shall support BLE scale connection with weight reading at &ge; 5 Hz.</td><td>P2</td><td>Weight-based stop conditions</td><td>T-F-012</td></tr>
+              <tr><td><strong>REQ-F-010</strong></td><td>The system shall store up to 20 shot profiles in LittleFS.</td><td>P2</td><td>User need (multiple profiles)</td><td>T-F-013</td></tr>
+              <tr><td><strong>REQ-F-011</strong></td><td>The system shall log shot data (datapoints at 100ms intervals) and store at least 50 shot records. When storage is full, the oldest record shall be deleted automatically.</td><td>P2</td><td>User need (shot review)</td><td>T-F-013</td></tr>
+              <tr><td><strong>REQ-F-012</strong></td><td>The system shall provide OTA firmware update via the web interface, protected by a password.</td><td>P1</td><td>User need (easy updates)</td><td>T-F-004, T-F-005</td></tr>
+              <tr><td><strong>REQ-F-013</strong></td><td>The system shall serve a web application accessible from any browser on the local network.</td><td>P1</td><td>User need (phone control)</td><td>T-F-006</td></tr>
+              <tr><td><strong>REQ-F-014</strong></td><td>The system shall stream real-time sensor data via WebSocket at &ge; 10 Hz during shots.</td><td>P1</td><td>User need (remote monitoring)</td><td>T-F-007</td></tr>
+              <tr><td><strong>REQ-F-015</strong></td><td>The system shall provide a REST API (versioned, /api/v1) for profile CRUD, config, and shot history.</td><td>P1</td><td>Community / integration need</td><td>T-F-006</td></tr>
+              <tr><td><strong>REQ-F-016</strong></td><td>The system shall display temperature, pressure, flow, shot timer, and weight on the TFT display during shots.</td><td>P1</td><td>User need (local monitoring)</td><td>Visual inspection</td></tr>
+              <tr><td><strong>REQ-F-017</strong></td><td>The system shall display current temperature and ready/heating status on the TFT display when idle.</td><td>P1</td><td>User need (ready indication)</td><td>Visual inspection</td></tr>
+              <tr><td><strong>REQ-F-018</strong></td><td>The system shall support steam mode: heat boiler to steam setpoint (configurable, default 155 &deg;C), indicate steam ready on TFT, and disable steam after steam switch is turned off.</td><td>P1</td><td>Legacy feature parity</td><td>T-F-014</td></tr>
+              <tr><td><strong>REQ-F-019</strong></td><td>The system shall support flush mode: run the pump at a fixed power level for a configurable duration, cycling the solenoid for backflush.</td><td>P2</td><td>User need (machine cleaning)</td><td>T-F-014</td></tr>
+              <tr><td><strong>REQ-F-020</strong></td><td>The system shall support descale mode: run a pre-defined pump cycle (on/off intervals) for descaling solution.</td><td>P3</td><td>User need (maintenance)</td><td>T-F-014</td></tr>
+              <tr><td><strong>REQ-F-021</strong></td><td>The physical brew switch shall be the hardware authority for shot start/stop. If the brew switch is OFF, a WebSocket start_shot command shall be ignored. If the brew switch is turned OFF during a shot, the shot shall stop immediately.</td><td>P1</td><td>Safety (hardware interlock)</td><td>T-F-015</td></tr>
+              <tr><td><strong>REQ-F-022</strong></td><td>Configuration changes shall persist across power cycles via NVS. Invalid configurations shall be rejected and the previous valid configuration shall be retained.</td><td>P1</td><td>Reliability</td><td>T-F-016</td></tr>
+              <tr><td><strong>REQ-F-023</strong></td><td>The system shall support WiFi connection with auto-reconnect. If WiFi is unavailable, the system shall continue operating (PID, display, profiles) without WiFi.</td><td>P1</td><td>Reliability</td><td>T-F-017</td></tr>
+              <tr><td><strong>REQ-F-024</strong></td><td>The system shall be discoverable on the local network via mDNS (hostname: <code>espresso.local</code>).</td><td>P2</td><td>Usability (no IP lookup)</td><td>T-F-006</td></tr>
+              <tr><td><strong>REQ-F-025</strong></td><td>The system shall support profile import and export via the web UI (JSON format).</td><td>P2</td><td>Community (profile sharing)</td><td>T-F-018</td></tr>
+              <tr><td><strong>REQ-F-026</strong></td><td>The system shall estimate espresso output weight from flow data (predictive weight) when BLE scales are not connected.</td><td>P2</td><td>Legacy feature parity</td><td>T-F-019</td></tr>
+              <tr><td><strong>REQ-F-027</strong></td><td>The system shall support config migration: when firmware is updated and the config schema version changes, existing config shall be automatically migrated to the new schema.</td><td>P1</td><td>Reliability (OTA robustness)</td><td>T-U-005</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Security Requirements -->
+        <h3 id="security-requirements">Security Requirements</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Rationale</th><th>Source</th><th>Verification</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>REQ-SEC-001</strong></td>
+                <td>Write operations (REST PUT/POST/DELETE, WebSocket commands) shall require a session token obtained by authenticating with a PIN.</td>
+                <td>P1</td>
+                <td>Prevents unauthorized changes from any device on the WiFi.</td>
+                <td>IEC 62443-4-2</td>
+                <td>T-F-005, T-F-020</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-SEC-002</strong></td>
+                <td>Destructive operations (OTA, restart, factory-reset) shall require a separate admin password.</td>
+                <td>P1</td>
+                <td>Higher bar for actions that can brick or wipe the device.</td>
+                <td>IEC 62443-4-2</td>
+                <td>T-F-004, T-F-005</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-SEC-003</strong></td>
+                <td>Default PIN (1234) and default OTA password (openespresso) shall be set at factory. The web app shall prompt the user to change both on first connection if defaults are still active.</td>
+                <td>P1</td>
+                <td>Prevents shipping with no auth.</td>
+                <td>IEC 62443-4-2</td>
+                <td>T-F-020</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-SEC-004</strong></td>
+                <td>The auth endpoint (POST /api/v1/auth) shall be rate-limited to 5 attempts per minute. The OTA endpoint shall be rate-limited to 3 attempts per minute.</td>
+                <td>P1</td>
+                <td>Prevents brute-force attacks on the local network.</td>
+                <td>IEC 62443-4-2</td>
+                <td>T-F-020</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-SEC-005</strong></td>
+                <td>GET /config shall never return wifi_password in the response body. The field shall be write-only.</td>
+                <td>P1</td>
+                <td>Prevents WiFi credential disclosure to any device on the network.</td>
+                <td>IEC 62443-4-2</td>
+                <td>T-F-020</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-SEC-006</strong></td>
+                <td>Session tokens shall be 32-byte cryptographically random values, valid until device reboot.</td>
+                <td>P2</td>
+                <td>Adequate for single-user home network. No persistent sessions needed.</td>
+                <td>IEC 62443-4-2</td>
+                <td>Code review</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Data Requirements -->
+        <h3 id="data-requirements">Data Requirements</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Rationale</th><th>Source</th><th>Verification</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>REQ-D-001</strong></td>
+                <td>Shot log storage shall use a FIFO eviction policy: when the 50-record limit is reached, the oldest record shall be deleted before writing a new one.</td>
+                <td>P2</td>
+                <td>Prevents storage-full errors that would lose current shot data.</td>
+                <td>Design decision</td>
+                <td>T-F-013</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-D-002</strong></td>
+                <td>Profile JSON values shall be validated on import: pressure targets 0-15 bar, temperature targets 0-170 &deg;C, flow targets 0-10 ml/s, duration 0-120000ms, max 10 phases.</td>
+                <td>P1</td>
+                <td>Prevents invalid profiles from causing unexpected actuator behavior.</td>
+                <td>Safety analysis</td>
+                <td>T-F-018</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-D-003</strong></td>
+                <td>The system shall support export of all user data (config, profiles, shot history) via the REST API for backup purposes.</td>
+                <td>P2</td>
+                <td>Prevents data loss on flash corruption or device replacement.</td>
+                <td>User need</td>
+                <td>T-F-018</td>
+              </tr>
+              <tr>
+                <td><strong>REQ-D-004</strong></td>
+                <td>If NVS is corrupted or unreadable, the system shall fall back to compiled-in default configuration and notify the user.</td>
+                <td>P1</td>
+                <td>Prevents boot failure from flash corruption.</td>
+                <td>Reliability</td>
+                <td>T-F-016</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Performance Requirements -->
+        <h3 id="performance-requirements">Performance Requirements</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Requirement</th><th>Value</th><th>Pri</th><th>Rationale</th><th>Verification</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>REQ-P-001</strong></td><td>Control loop frequency (PID + sensor read + actuator write)</td><td>&ge; 200 Hz (5ms period)</td><td>P1</td><td>ControlTask runs at 5ms period. Provides 4-5 iterations per half-cycle at 50Hz mains for precise dimmer timing.</td><td>T-F-008</td></tr>
+              <tr><td><strong>REQ-P-002</strong></td><td>Sensor polling rate (temperature)</td><td>&ge; 10 Hz</td><td>P1</td><td>MAX31855 conversion time is ~100ms; 10 Hz is the practical maximum.</td><td>T-F-011</td></tr>
+              <tr><td><strong>REQ-P-003</strong></td><td>Sensor polling rate (pressure)</td><td>&ge; 50 Hz</td><td>P1</td><td>ADS1115 at 128 SPS in continuous mode; 50 Hz achievable.</td><td>T-F-011</td></tr>
+              <tr><td><strong>REQ-P-004</strong></td><td>TFT display refresh rate</td><td>&ge; 15 FPS</td><td>P2</td><td>Smooth enough for real-time graphs on 320x240 via SPI.</td><td>T-F-021</td></tr>
+              <tr><td><strong>REQ-P-005</strong></td><td>WebSocket data rate</td><td>&ge; 10 messages/sec during shot</td><td>P1</td><td>100ms interval; adequate for remote graph rendering.</td><td>T-F-007</td></tr>
+              <tr><td><strong>REQ-P-006</strong></td><td>Web app initial load time</td><td>&lt; 3 seconds</td><td>P2</td><td>LittleFS asset serving over WiFi; small bundle size (&lt; 200KB gzipped).</td><td>T-F-022</td></tr>
+              <tr><td><strong>REQ-P-007</strong></td><td>Boot time (power-on to temperature reading)</td><td>&lt; 5 seconds</td><td>P1</td><td>WiFi connection can happen asynchronously; display and control must start fast.</td><td>T-F-009</td></tr>
+              <tr><td><strong>REQ-P-008</strong></td><td>Temperature control accuracy (steady state)</td><td>&plusmn;1 &deg;C</td><td>P1</td><td>Measured at thermocouple; PID must achieve this after settling.</td><td>T-F-001</td></tr>
+              <tr><td><strong>REQ-P-009</strong></td><td>Pressure control accuracy (during profiled shot)</td><td>&plusmn;0.5 bar</td><td>P1</td><td>At steady target; transients during transitions are expected.</td><td>T-F-002</td></tr>
+              <tr><td><strong>REQ-P-010</strong></td><td>Memory usage (free heap during operation)</td><td>&ge; 50 KB free</td><td>P1</td><td>Ensure no heap exhaustion during WiFi + BLE + display + WebSocket.</td><td>T-F-010</td></tr>
+              <tr><td><strong>REQ-P-011</strong></td><td>Shot log write latency</td><td>&lt; 50ms per datapoint write</td><td>P2</td><td>LittleFS writes must not block the control loop (runs on separate task/core).</td><td>T-F-023</td></tr>
+              <tr><td><strong>REQ-P-012</strong></td><td>Profile load time (LittleFS read + JSON parse)</td><td>&lt; 100ms</td><td>P2</td><td>User should not perceive delay when switching profiles.</td><td>T-F-024</td></tr>
+              <tr><td><strong>REQ-P-013</strong></td><td>BLE scale scan + connect time</td><td>&lt; 10 seconds from boot</td><td>P2</td><td>Scale should be connected before first shot (typical warm-up &gt; 30s).</td><td>T-F-012</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Usability Requirements -->
+        <h3 id="usability-requirements">Usability Requirements</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Requirement</th><th>Pri</th><th>Verification</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>REQ-U-001</strong></td><td>Temperature display on TFT shall be readable from 1 meter distance (&ge; 24pt font, minimum contrast ratio 4.5:1).</td><td>P2</td><td>Visual inspection</td></tr>
+              <tr><td><strong>REQ-U-002</strong></td><td>The web app shall be usable on a phone screen (responsive layout, minimum touch target 44x44px).</td><td>P2</td><td>Browser test</td></tr>
+              <tr><td><strong>REQ-U-003</strong></td><td>Profile switching shall require &le; 3 taps/clicks from the idle state. TFT shows top 5 favorites; full list on web app.</td><td>P2</td><td>Interaction test</td></tr>
+              <tr><td><strong>REQ-U-004</strong></td><td>The system shall display a fault notification on both TFT and web app, including: fault type, recommended recovery action (e.g., "Thermocouple disconnected — check wiring and power cycle").</td><td>P1</td><td>Fault injection test</td></tr>
+              <tr><td><strong>REQ-U-005</strong></td><td>The TFT display shall turn off or dim after a configurable timeout (default: 5 minutes) when idle.</td><td>P3</td><td>Timer test</td></tr>
+              <tr><td><strong>REQ-U-006</strong></td><td>The web app shall not require login for read-only operations (viewing sensors, shot history).</td><td>P2</td><td>Browser test</td></tr>
+              <tr><td><strong>REQ-U-007</strong></td><td>First-time setup shall guide the user through WiFi configuration and PIN/password change via the web app.</td><td>P2</td><td>Manual test</td></tr>
+              <tr><td><strong>REQ-U-008</strong></td><td>OTA firmware update shall show progress indication on both TFT and web app, with clear error messages on failure.</td><td>P2</td><td>OTA test</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Quality Attributes -->
+        <h3 id="quality-attributes">Quality Attributes</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Attribute</th><th>Target</th><th>Basis</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Reliability</strong></td>
+                <td>MTBF &gt; 5000 hours of operation</td>
+                <td>SSR rated for 100K+ cycles; thermocouple rated for 10K+ hours. Software MTBF driven by watchdog recovery (&lt; 1s). 5000 hours &asymp; 2 years of daily use (7 hours/day).</td>
+                <td>Primary risk: SSR degradation (thyristor wear), thermocouple fatigue (thermal cycling).</td>
+              </tr>
+              <tr>
+                <td><strong>Availability</strong></td>
+                <td>System usable within 5 seconds of power-on</td>
+                <td>WiFi/BLE connect asynchronously; PID and display start on boot.</td>
+                <td>See REQ-P-007.</td>
+              </tr>
+              <tr>
+                <td><strong>Maintainability</strong></td>
+                <td>Any sensor or actuator replaceable without soldering</td>
+                <td>JST-XH connectors on all sensor cables. External enclosure opens with 4 screws.</td>
+                <td>See BOM (section 14).</td>
+              </tr>
+              <tr>
+                <td><strong>Portability</strong></td>
+                <td>Firmware compiles and runs on any ESP32-S3 dev board</td>
+                <td>No proprietary dependencies. All libraries open-source (see dependency table in section 9).</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td><strong>Testability</strong></td>
+                <td>Core logic testable on host (x86) without hardware</td>
+                <td>Pure C++ modules: PID, phase_profiler, predictive_weight, state_machine, config_migration. See module annotations in section 9.</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td><strong>Security</strong></td>
+                <td>Three-tier auth model. No sensitive data exposed.</td>
+                <td>See REQ-SEC-001 through REQ-SEC-006 and ICD-01 authentication model.</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td><strong>Recoverability</strong></td>
+                <td>System recovers from FAULT state via power cycle or API reset. No data lost on fault.</td>
+                <td>Shot-in-progress data may be lost (acceptable — safety takes priority over data). Config and completed shots survive faults.</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td><strong>Interoperability</strong></td>
+                <td>REST/WS API designed for third-party integration</td>
+                <td>Home Assistant, custom dashboards, and community apps can use the API documented in ICD-01.</td>
+                <td>Not a formal requirement; the API is the enabler.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 17: FMEA -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-17">
+        <h2>17. Failure Mode and Effects Analysis (FMEA)</h2>
+
+        <p>Systematic analysis of what happens when each component fails. Severity: 1 (cosmetic) to 5 (safety hazard). Detection: 1 (always detected) to 5 (undetectable). Risk = Severity x Detection.</p>
+
+        <!-- Sensor Failures -->
+        <h3 id="fmea-sensor">Sensor Failures</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Component</th><th>Failure Mode</th><th>Effect</th><th>Severity</th><th>Detection</th><th>Risk</th><th>Mitigation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Thermocouple</td><td>Open circuit</td><td>MAX31855 reports fault bit. No temperature reading.</td><td>5</td><td>1</td><td>5</td><td>REQ-S-003: Disable SSR immediately. REQ-S-001: Thermal fuse provides hardware backup.</td></tr>
+              <tr><td>Thermocouple</td><td>Short circuit</td><td>MAX31855 reports fault bit. Reading stuck at ~0 &deg;C.</td><td>5</td><td>1</td><td>5</td><td>REQ-S-003: Fault bit detected &rarr; SSR off.</td></tr>
+              <tr><td>Thermocouple</td><td>Reads low (degraded)</td><td>PID over-heats boiler because it thinks temp is lower than actual.</td><td>5</td><td>3</td><td>15</td><td>REQ-S-004: 170 &deg;C software ceiling. REQ-S-001: 190 &deg;C thermal fuse. Rate-of-change monitoring (&gt; 10 &deg;C/s = fault).</td></tr>
+              <tr><td>Pressure transducer</td><td>Disconnected</td><td>ADS1115 reads 0V or floating. Pressure reads 0 or garbage.</td><td>3</td><td>2</td><td>6</td><td>Range check: reading &lt; -0.5 bar or &gt; 15 bar &rarr; fault.</td></tr>
+              <tr><td>Pressure transducer</td><td>Reads high</td><td>Pump may reduce power unnecessarily. Shot quality degrades.</td><td>2</td><td>3</td><td>6</td><td>OPV provides mechanical pressure limit regardless of sensor.</td></tr>
+              <tr><td>Pressure transducer</td><td>Reads low</td><td>Pump may over-pressurize.</td><td>4</td><td>3</td><td>12</td><td>OPV limits pressure to ~9 bar (adjusted). Software limit REQ-S-005 at 13 bar.</td></tr>
+              <tr><td>Flow sensor</td><td>Stuck (no pulses)</td><td>Flow reads 0. System may overshoot on flow-profiled phases.</td><td>3</td><td>2</td><td>6</td><td>Timeout: if pump is on but flow = 0 for &gt; 10s, warn user.</td></tr>
+              <tr><td>Flow sensor</td><td>Noisy (extra pulses)</td><td>Flow reads too high. Pump may reduce power early.</td><td>2</td><td>3</td><td>6</td><td>Debouncing in ISR. Moving average filter.</td></tr>
+              <tr><td>BLE scales</td><td>Disconnected mid-shot</td><td>Weight reads -1 (unavailable). Weight-based stop conditions disabled.</td><td>2</td><td>1</td><td>2</td><td>Fallback to volume-based or time-based stop. Predictive weight as backup.</td></tr>
+              <tr><td>ADS1115 (ADC)</td><td>I2C bus hang</td><td>No pressure readings.</td><td>4</td><td>1</td><td>4</td><td>REQ-S-003 (no readings for 200ms &rarr; fault). I2C bus recovery (clock stretch reset).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Actuator Failures -->
+        <h3 id="fmea-actuator">Actuator Failures</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Component</th><th>Failure Mode</th><th>Effect</th><th>Severity</th><th>Detection</th><th>Risk</th><th>Mitigation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>SSR</td><td>Stuck ON (shorted)</td><td>Boiler heats continuously.</td><td>5</td><td>2</td><td>10</td><td>REQ-S-008: Stuck SSR detection (temp rising after off command). REQ-S-001: Thermal fuse opens at 190 &deg;C.</td></tr>
+              <tr><td>SSR</td><td>Stuck OFF (open)</td><td>Boiler doesn't heat. Machine unusable but safe.</td><td>1</td><td>1</td><td>1</td><td>Temperature not reaching setpoint &rarr; user notified.</td></tr>
+              <tr><td>Dimmer/Triac</td><td>Stuck ON</td><td>Pump runs at full power. Over-pressure possible.</td><td>4</td><td>2</td><td>8</td><td>OPV limits mechanical pressure. Pressure sensor detects over-pressure &rarr; REQ-S-005.</td></tr>
+              <tr><td>Dimmer/Triac</td><td>Stuck OFF</td><td>Pump doesn't run. No espresso, but safe.</td><td>1</td><td>1</td><td>1</td><td>No mitigation needed (fail-safe).</td></tr>
+              <tr><td>Solenoid relay</td><td>Stuck ON (open)</td><td>3-way valve stays open. Water drains from group during brew.</td><td>2</td><td>2</td><td>4</td><td>Pressure and flow anomaly detection.</td></tr>
+              <tr><td>Solenoid relay</td><td>Stuck OFF (closed)</td><td>3-way valve stays closed. Normal brew works. Backflush doesn't.</td><td>1</td><td>2</td><td>2</td><td>User notices backflush failure.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Controller Failures -->
+        <h3 id="fmea-controller">Controller Failures</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Component</th><th>Failure Mode</th><th>Effect</th><th>Severity</th><th>Detection</th><th>Risk</th><th>Mitigation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ESP32-S3</td><td>Software hang (infinite loop)</td><td>All outputs stuck in last state.</td><td>5</td><td>1</td><td>5</td><td>REQ-S-006: Watchdog resets MCU within 500ms &rarr; GPIOs go to safe state.</td></tr>
+              <tr><td>ESP32-S3</td><td>Hard fault / crash</td><td>MCU resets.</td><td>3</td><td>1</td><td>3</td><td>GPIO defaults to safe state on reset (REQ-S-002, REQ-S-009).</td></tr>
+              <tr><td>ESP32-S3</td><td>Power loss to MCU</td><td>Electronics off, but mains still powered. SSR off (no control signal).</td><td>2</td><td>1</td><td>2</td><td>Pull-down resistors ensure actuators off when MCU unpowered.</td></tr>
+              <tr><td>ESP32-S3</td><td>WiFi stack crash</td><td>No web UI, no WebSocket. TFT display still works. PID still runs.</td><td>1</td><td>2</td><td>2</td><td>WiFi runs on Core 1. Control runs on Core 0. WiFi crash does not affect control.</td></tr>
+              <tr><td>5V PSU</td><td>Failure</td><td>No power to MCU/electronics. All actuators off (pull-downs).</td><td>2</td><td>1</td><td>2</td><td>Fail-safe by design. Thermal fuse provides boiler protection.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Highest Risk Items -->
+        <h3 id="fmea-highest-risk">Highest Risk Items (Risk &ge; 10)</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Risk</th><th>Item</th><th>Primary Mitigation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>15</strong></td><td>Thermocouple reads low (degraded)</td><td>Thermal fuse (190 &deg;C) + rate-of-change monitoring</td></tr>
+              <tr><td><strong>12</strong></td><td>Pressure transducer reads low</td><td>OPV (mechanical) + software pressure limit</td></tr>
+              <tr><td><strong>10</strong></td><td>SSR stuck ON</td><td>Stuck SSR detection + thermal fuse</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 18: Verification & Test Plan -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-18">
+        <h2>18. Verification &amp; Test Plan</h2>
+
+        <p>Each test maps to one or more requirements from section 16.</p>
+
+        <!-- Safety Verification Tests -->
+        <h3 id="safety-tests">Safety Verification Tests</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Test ID</th><th>Requirements</th><th>Test Procedure</th><th>Pass Criteria</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>T-S-001</strong></td><td>REQ-S-001</td><td>Inspect installation: verify thermal fuse is wired in series with boiler element, mounted in upper thermostat slot with thermal paste.</td><td>Physical inspection confirms correct wiring. Continuity test shows fuse is closed at room temperature.</td></tr>
+              <tr><td><strong>T-S-002</strong></td><td>REQ-S-002, REQ-S-009</td><td>Power-cycle the MCU. Measure voltage on GPIO39 (SSR), GPIO41 (dimmer), GPIO42 (solenoid) during reset.</td><td>All three pins read &lt; 0.3V within 1ms of reset.</td></tr>
+              <tr><td><strong>T-S-003</strong></td><td>REQ-S-003</td><td>Disconnect thermocouple while system is running. Measure time from disconnect to SSR GPIO going LOW.</td><td>SSR off within 100ms. System enters FAULT state. TFT/web show fault notification.</td></tr>
+              <tr><td><strong>T-S-004</strong></td><td>REQ-S-004</td><td>Heat boiler with PID setpoint at 170 &deg;C. Verify SSR disables at limit.</td><td>SSR turns off at 170 &deg;C. System enters FAULT state.</td></tr>
+              <tr><td><strong>T-S-005</strong></td><td>REQ-S-005</td><td>Block portafilter fully. Run pump at high power. Verify system stops pump at 13 bar.</td><td>Pump stops, solenoid opens. System enters FAULT state. (OPV will limit pressure before this in practice.)</td></tr>
+              <tr><td><strong>T-S-006</strong></td><td>REQ-S-006</td><td>Insert <code>while(true){}</code> in control task (test build only). Verify watchdog resets MCU.</td><td>MCU resets within 500ms. GPIOs go to safe state. System reboots.</td></tr>
+              <tr><td><strong>T-S-007</strong></td><td>REQ-S-007</td><td>Set brew temp to 93 &deg;C. Leave system heating for 20+ minutes.</td><td>SSR disables at 20 minutes. Notification shown.</td></tr>
+              <tr><td><strong>T-S-008</strong></td><td>REQ-S-008</td><td>Simulate stuck SSR: after SSR off command, inject rising temperature readings.</td><td>System detects temp rise &gt; 5 &deg;C within 3s of off command. Enters FAULT state.</td></tr>
+              <tr><td><strong>T-S-009</strong></td><td>REQ-S-010</td><td>Measure resistance between mains earth pin and Gaggia chassis with multimeter.</td><td>&lt; 0.1 &Omega;.</td></tr>
+              <tr><td><strong>T-S-010</strong></td><td>REQ-S-011</td><td>Inspect internal wiring. Verify high-voltage and low-voltage cables are physically separated.</td><td>Visual inspection: minimum 10mm separation or shielding between AC and signal wires.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Functional Verification Tests -->
+        <h3 id="functional-tests">Functional Verification Tests</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Test ID</th><th>Requirements</th><th>Test Procedure</th><th>Pass Criteria</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>T-F-001</strong></td><td>REQ-F-001, REQ-P-008</td><td>Set brew temp to 93 &deg;C. Wait for steady state. Log temperature for 5 minutes.</td><td>Temperature stays within 93 &deg;C &plusmn; 1 &deg;C after initial settling.</td></tr>
+              <tr><td><strong>T-F-002</strong></td><td>REQ-F-002, REQ-P-009</td><td>Run a flat 9-bar profile. Log pressure during extraction (after ramp).</td><td>Pressure stays within 9.0 &plusmn; 0.5 bar during steady extraction.</td></tr>
+              <tr><td><strong>T-F-003</strong></td><td>REQ-F-003, REQ-F-004, REQ-F-005</td><td>Load a 3-phase test profile (PI at 3 bar for 8s &rarr; ramp to 9 bar &rarr; hold until 36g). Execute shot.</td><td>All three phases execute. Phase transitions occur at correct stop conditions. Shot stops at 36g.</td></tr>
+              <tr><td><strong>T-F-004</strong></td><td>REQ-F-012, REQ-SEC-002</td><td>Upload firmware via web UI OTA endpoint with correct password.</td><td>Firmware updates successfully. System reboots with new version.</td></tr>
+              <tr><td><strong>T-F-005</strong></td><td>REQ-F-012, REQ-SEC-001, REQ-SEC-002</td><td>Attempt OTA upload without password or with wrong password. Attempt REST write without session token.</td><td>OTA rejected with 401. REST write rejected with 401. Firmware and data unchanged.</td></tr>
+              <tr><td><strong>T-F-006</strong></td><td>REQ-F-013, REQ-F-015, REQ-F-024</td><td>Open web app on phone, tablet, and desktop browser via <code>espresso.local</code>. Navigate all pages. Test all REST endpoints with curl.</td><td>All pages render correctly. All REST endpoints return correct JSON. mDNS resolves.</td></tr>
+              <tr><td><strong>T-F-007</strong></td><td>REQ-F-014, REQ-P-005</td><td>Connect WebSocket client. Start shot. Measure message interval.</td><td>Messages arrive at &ge; 10 Hz (&le; 100ms interval).</td></tr>
+              <tr><td><strong>T-F-008</strong></td><td>REQ-P-001</td><td>Instrument control loop with timing. Log loop duration over 1000 iterations.</td><td>99th percentile loop duration &lt; 5ms (200 Hz).</td></tr>
+              <tr><td><strong>T-F-009</strong></td><td>REQ-P-007</td><td>Power on system. Measure time from power-on to first valid temperature reading on TFT.</td><td>&lt; 5 seconds.</td></tr>
+              <tr><td><strong>T-F-010</strong></td><td>REQ-P-010</td><td>Monitor free heap during: idle, active shot with WebSocket client, BLE scales connected.</td><td>Free heap &ge; 50 KB in all scenarios.</td></tr>
+              <tr><td><strong>T-F-011</strong></td><td>REQ-F-006, REQ-F-007, REQ-F-008, REQ-P-002, REQ-P-003</td><td>Instrument sensor read timestamps during a shot. Log interval between consecutive reads for each sensor.</td><td>Temperature: &le; 100ms intervals (&ge; 10 Hz). Pressure: &le; 20ms intervals (&ge; 50 Hz). Flow: interrupt-driven (verify pulses counted).</td></tr>
+              <tr><td><strong>T-F-012</strong></td><td>REQ-F-009, REQ-P-013</td><td>Power on with BLE scales in range. Measure time from boot to first weight reading.</td><td>Weight reading received within 10 seconds. Reading rate &ge; 5 Hz.</td></tr>
+              <tr><td><strong>T-F-013</strong></td><td>REQ-F-010, REQ-F-011, REQ-D-001</td><td>Create 20 profiles. Store 50 shot records. Attempt to store 51st shot.</td><td>20 profiles stored successfully. 50 shots stored. 51st shot overwrites oldest (FIFO).</td></tr>
+              <tr><td><strong>T-F-014</strong></td><td>REQ-F-018, REQ-F-019, REQ-F-020</td><td>Enter steam mode (switch steam ON). Enter flush mode (send flush command). Enter descale mode (send descale command).</td><td>Steam mode heats to steam setpoint. Flush runs pump and cycles solenoid. Descale runs configured pump cycles.</td></tr>
+              <tr><td><strong>T-F-015</strong></td><td>REQ-F-021</td><td>Start shot via WebSocket with brew switch OFF. Start shot via brew switch. Turn brew switch OFF during shot.</td><td>WebSocket start ignored when switch OFF. Brew switch starts shot normally. Switch OFF stops shot immediately.</td></tr>
+              <tr><td><strong>T-F-016</strong></td><td>REQ-F-022, REQ-D-004</td><td>Change config via API, power cycle, verify config persists. Corrupt NVS partition, boot system.</td><td>Config survives power cycle. Corrupted NVS falls back to defaults with user notification.</td></tr>
+              <tr><td><strong>T-F-017</strong></td><td>REQ-F-023</td><td>Boot system with WiFi AP unavailable. Verify PID and display function. Then enable WiFi AP.</td><td>System operates normally without WiFi. Web app becomes available when WiFi connects.</td></tr>
+              <tr><td><strong>T-F-018</strong></td><td>REQ-F-025, REQ-D-002, REQ-D-003</td><td>Export profile via API. Import profile via API. Import invalid profile (pressure &gt; 15 bar). Export all data via API.</td><td>Export returns valid JSON. Import succeeds. Invalid import rejected with error message. Full export includes config + profiles + shots.</td></tr>
+              <tr><td><strong>T-F-019</strong></td><td>REQ-F-026</td><td>Run a shot without BLE scales. Monitor predictive weight output.</td><td>Predictive weight begins estimating after flow detected. Weight estimate within &plusmn;5g of actual at shot end (verified with manual scale).</td></tr>
+              <tr><td><strong>T-F-020</strong></td><td>REQ-SEC-001, REQ-SEC-003, REQ-SEC-004, REQ-SEC-005</td><td>Attempt to send WebSocket command without auth. Verify default credential change prompt. Send 6 auth attempts in 1 minute. GET /config and check for wifi_password.</td><td>Command rejected. Prompt shown. 6th attempt returns 429. wifi_password absent from response.</td></tr>
+              <tr><td><strong>T-F-021</strong></td><td>REQ-P-004</td><td>Measure TFT frame rate during active shot rendering using GPIO toggle on frame complete.</td><td>&ge; 15 FPS.</td></tr>
+              <tr><td><strong>T-F-022</strong></td><td>REQ-P-006</td><td>Clear browser cache. Load web app. Measure time from first HTTP request to interactive page.</td><td>&lt; 3 seconds on local WiFi.</td></tr>
+              <tr><td><strong>T-F-023</strong></td><td>REQ-P-011</td><td>During a shot, measure time from ShotDataPoint queued to LittleFS write complete.</td><td>&lt; 50ms per datapoint.</td></tr>
+              <tr><td><strong>T-F-024</strong></td><td>REQ-P-012</td><td>Switch active profile via API. Measure time from request to profile loaded and applied.</td><td>&lt; 100ms.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Unit Tests -->
+        <h3 id="unit-tests">Unit Tests (Host-Side, No Hardware)</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Test ID</th><th>Module</th><th>Requirements</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>T-U-001</strong></td><td>PID controller</td><td>REQ-F-001, REQ-F-002</td><td>Verify P, I, D terms with known inputs. Test anti-windup (integral freeze when output saturated). Test output clamping. Test zero Kp guard. Test derivative filter.</td></tr>
+              <tr><td><strong>T-U-002</strong></td><td>Phase profiler</td><td>REQ-F-003, REQ-F-004, REQ-F-005</td><td>Verify phase transitions for all curve types. Test stop conditions (time, pressure, flow, weight). Test global stop conditions. Test "from current" start value (-1).</td></tr>
+              <tr><td><strong>T-U-003</strong></td><td>Predictive weight</td><td>REQ-F-026</td><td>Verify puck resistance calculation. Test output flow detection thresholds. Test force-start at 65ml.</td></tr>
+              <tr><td><strong>T-U-004</strong></td><td>Config migration</td><td>REQ-F-027</td><td>Create config at version N. Run migration to version N+1. Verify all fields correctly migrated. Test migration from v1 to v3 (multi-step).</td></tr>
+              <tr><td><strong>T-U-005</strong></td><td>Profile JSON parser</td><td>REQ-D-002</td><td>Parse valid profile JSON. Verify all fields populated. Parse invalid JSON (missing fields, out-of-range values). Verify error returned with reason.</td></tr>
+              <tr><td><strong>T-U-006</strong></td><td>State machine</td><td>REQ-F-018, REQ-F-019, REQ-F-020, REQ-F-021</td><td>Verify all 8 states reachable. Verify all valid transitions from transition guard table. Verify FAULT reachable from any state. Verify no invalid transitions. Verify brew switch override logic.</td></tr>
+              <tr><td><strong>T-U-007</strong></td><td>Transition curves</td><td>REQ-F-003</td><td>Test LINEAR, EASE_IN, EASE_OUT, EASE_IN_OUT, INSTANT with known inputs. Verify outputs match expected values within 0.01. Test boundary conditions (t=0, t=1, t&gt;1).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Requirements Traceability Matrix -->
+        <h3 id="traceability-matrix">Requirements Traceability Matrix</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Design Module(s)</th><th>Test(s)</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>REQ-S-001</td><td>Hardware (thermal fuse)</td><td>T-S-001</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-002</td><td>safety/watchdog, main.cpp (safetyGpioInit)</td><td>T-S-002</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-003</td><td>safety/fault_handler, control/control_task</td><td>T-S-003</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-004</td><td>safety/fault_handler, safety/safety_limits</td><td>T-S-004</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-005</td><td>safety/fault_handler, safety/safety_limits</td><td>T-S-005</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-006</td><td>safety/watchdog</td><td>T-S-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-007</td><td>safety/fault_handler</td><td>T-S-007</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-008</td><td>safety/fault_handler</td><td>T-S-008</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-009</td><td>Hardware (pull-down resistors)</td><td>T-S-002</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-010</td><td>Hardware (wiring)</td><td>T-S-009</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-011</td><td>Hardware (wiring)</td><td>T-S-010</td><td>Proposed</td></tr>
+              <tr><td>REQ-S-012</td><td>Hardware (EMI filter)</td><td>Inspection</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-001</td><td>control/pid, control/boiler</td><td>T-F-001, T-U-001</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-002</td><td>control/pid, control/dimmer</td><td>T-F-002, T-U-001</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-003</td><td>profile/phase_profiler</td><td>T-F-003, T-U-002</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-004</td><td>profile/phase_profiler</td><td>T-F-003, T-U-002</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-005</td><td>profile/phase_profiler</td><td>T-F-003, T-U-002</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-006</td><td>sensors/thermocouple</td><td>T-F-011</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-007</td><td>sensors/pressure</td><td>T-F-011</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-008</td><td>sensors/flow</td><td>T-F-011</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-009</td><td>connectivity/ble_scales</td><td>T-F-012</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-010</td><td>config/storage</td><td>T-F-013</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-011</td><td>config/storage</td><td>T-F-013</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-012</td><td>connectivity/ota, ui/web_server</td><td>T-F-004, T-F-005</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-013</td><td>ui/web_server</td><td>T-F-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-014</td><td>ui/websocket</td><td>T-F-007</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-015</td><td>ui/web_server</td><td>T-F-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-016</td><td>ui/display</td><td>Visual inspection</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-017</td><td>ui/display</td><td>Visual inspection</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-018</td><td>control/state_machine, control/boiler</td><td>T-F-014, T-U-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-019</td><td>control/state_machine, control/dimmer</td><td>T-F-014, T-U-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-020</td><td>control/state_machine</td><td>T-F-014, T-U-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-021</td><td>control/control_task, control/state_machine</td><td>T-F-015, T-U-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-022</td><td>config/config, config/storage</td><td>T-F-016</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-023</td><td>connectivity/wifi_manager</td><td>T-F-017</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-024</td><td>connectivity/wifi_manager (mDNS)</td><td>T-F-006</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-025</td><td>ui/web_server, config/storage</td><td>T-F-018</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-026</td><td>profile/predictive_weight</td><td>T-F-019, T-U-003</td><td>Proposed</td></tr>
+              <tr><td>REQ-F-027</td><td>config/migration</td><td>T-U-004</td><td>Proposed</td></tr>
+              <tr><td>REQ-SEC-001</td><td>ui/web_server, ui/websocket</td><td>T-F-005, T-F-020</td><td>Proposed</td></tr>
+              <tr><td>REQ-SEC-002</td><td>ui/web_server, connectivity/ota</td><td>T-F-004, T-F-005</td><td>Proposed</td></tr>
+              <tr><td>REQ-SEC-003</td><td>ui/web_server</td><td>T-F-020</td><td>Proposed</td></tr>
+              <tr><td>REQ-SEC-004</td><td>ui/web_server</td><td>T-F-020</td><td>Proposed</td></tr>
+              <tr><td>REQ-SEC-005</td><td>ui/web_server</td><td>T-F-020</td><td>Proposed</td></tr>
+              <tr><td>REQ-SEC-006</td><td>ui/web_server</td><td>Code review</td><td>Proposed</td></tr>
+              <tr><td>REQ-D-001</td><td>config/storage</td><td>T-F-013</td><td>Proposed</td></tr>
+              <tr><td>REQ-D-002</td><td>profile/profile, ui/web_server</td><td>T-F-018, T-U-005</td><td>Proposed</td></tr>
+              <tr><td>REQ-D-003</td><td>ui/web_server, config/storage</td><td>T-F-018</td><td>Proposed</td></tr>
+              <tr><td>REQ-D-004</td><td>config/config, config/storage</td><td>T-F-016</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-001</td><td>control/control_task</td><td>T-F-008</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-002</td><td>sensors/thermocouple</td><td>T-F-011</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-003</td><td>sensors/pressure</td><td>T-F-011</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-004</td><td>ui/display</td><td>T-F-021</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-005</td><td>ui/websocket</td><td>T-F-007</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-006</td><td>ui/web_server</td><td>T-F-022</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-007</td><td>main.cpp (boot sequence)</td><td>T-F-009</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-008</td><td>control/pid</td><td>T-F-001</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-009</td><td>control/pid</td><td>T-F-002</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-010</td><td>All (system-level)</td><td>T-F-010</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-011</td><td>config/storage</td><td>T-F-023</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-012</td><td>config/storage, profile/profile</td><td>T-F-024</td><td>Proposed</td></tr>
+              <tr><td>REQ-P-013</td><td>connectivity/ble_scales</td><td>T-F-012</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-001</td><td>ui/display</td><td>Visual inspection</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-002</td><td>Web app (frontend)</td><td>Browser test</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-003</td><td>ui/display, Web app</td><td>Interaction test</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-004</td><td>ui/display, ui/websocket</td><td>Fault injection test</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-005</td><td>ui/display</td><td>Timer test</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-006</td><td>ui/web_server</td><td>Browser test</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-007</td><td>Web app (frontend)</td><td>Manual test</td><td>Proposed</td></tr>
+              <tr><td>REQ-U-008</td><td>connectivity/ota, ui/display, Web app</td><td>OTA test</td><td>Proposed</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 19: Standards Review & Gap Analysis -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-19">
+        <h2>19. Standards Review &amp; Gap Analysis</h2>
+
+        <p>Since this is a personal-use DIY modification (not a commercial product), formal certification is not required. However, applying these standards as a design checklist improves safety, quality, and maintainability.</p>
+
+        <!-- Applicable Standards -->
+        <h3 id="applicable-standards">Applicable Standards</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Standard</th><th>Title</th><th>Relevance</th><th>Required?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>IEEE 29148</strong> (replaces IEEE 830)</td><td>Systems and Software Engineering — Requirements Engineering</td><td>Software requirements specification structure</td><td>No (personal project), but useful as a quality checklist</td></tr>
+              <tr><td><strong>IEEE 1016</strong></td><td>Software Design Descriptions</td><td>Software design document structure and viewpoints</td><td>No, but useful for completeness</td></tr>
+              <tr><td><strong>IEC 60335-1</strong></td><td>Safety of Household Electrical Appliances — General Requirements</td><td>General safety for mains-powered heating appliances</td><td>Applies to commercial products. Strongly recommended as a safety design guide.</td></tr>
+              <tr><td><strong>IEC 60335-2-15</strong></td><td>Particular Requirements for Appliances for Heating Liquids</td><td>Espresso machine specific: boiler, overheating, pressure relief</td><td>Applies to commercial products. Critical safety reference.</td></tr>
+              <tr><td><strong>IEC 61508</strong></td><td>Functional Safety of E/E/PE Safety-Related Systems</td><td>Safety integrity levels (SIL) for safety functions like over-temperature shutdown</td><td>Formal SIL certification not required for personal use. Principles are valuable.</td></tr>
+              <tr><td><strong>IEC 62443-4-2</strong></td><td>Technical Security Requirements for IACS Components (Embedded Devices)</td><td>Cybersecurity for WiFi/BLE-connected embedded devices</td><td>Not required for personal use. Good practice for a network-connected device.</td></tr>
+              <tr><td><strong>EMC Directive 2014/30/EU</strong></td><td>Electromagnetic Compatibility</td><td>Emission limits and immunity for electronic equipment</td><td>Required only if product is sold in EU. Good practice for any device with AC dimmers and switch-mode power supplies.</td></tr>
+              <tr><td><strong>Low Voltage Directive 2014/35/EU</strong></td><td>Electrical Equipment for Use Within Certain Voltage Limits</td><td>Safety of equipment operating between 50-1000V AC</td><td>Required only if product is sold in EU. Critical reference for mains wiring design.</td></tr>
+              <tr><td><strong>Radio Equipment Directive 2014/53/EU</strong></td><td>Radio Equipment (WiFi, BLE)</td><td>Requirements for radio-emitting equipment</td><td>Required only if product is sold in EU. ESP32-S3 module should already be RED/FCC certified.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- IEEE 29148 Gap Analysis -->
+        <h3 id="gap-ieee-29148">Gap Analysis: IEEE 29148 (Software Requirements Specification)</h3>
+        <p>IEEE 29148 defines the required structure for a Software Requirements Specification (SRS). Our design document is a combined SRS + SDD (design description), which is appropriate for a single-person project.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>IEEE 29148 Section</th><th>Status</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1.1 Purpose</td><td><strong>Present</strong></td><td>Scope statement at top of document</td></tr>
+              <tr><td>1.2 Scope</td><td><strong>Present</strong></td><td>Target machine, what's in/out of scope</td></tr>
+              <tr><td>1.3.1 Product perspective</td><td><strong>Present</strong></td><td>Current state architecture analysis of prior art (Gaggiuino)</td></tr>
+              <tr><td>1.3.2 Product functions</td><td><strong>Present</strong></td><td>Sections 3, 9, 11 (software architecture, profile engine)</td></tr>
+              <tr><td>1.3.3 User characteristics</td><td><strong>Missing</strong></td><td>No description of target user (experience level, technical ability)</td></tr>
+              <tr><td>1.3.4 Limitations</td><td><strong>Partial</strong></td><td>Hardware constraints documented, but not explicit as "limitations" section</td></tr>
+              <tr><td>1.4 Definitions / Glossary</td><td><strong>Missing</strong></td><td>Terms like "OPV", "SSR", "PID", "phase profiling" used without definition</td></tr>
+              <tr><td>2. References</td><td><strong>Missing</strong></td><td>No list of referenced documents, datasheets, or prior art</td></tr>
+              <tr><td>3.1 Functional requirements</td><td><strong>Partial</strong></td><td>Functions described narratively but not as numbered, testable requirements</td></tr>
+              <tr><td>3.2 Performance requirements</td><td><strong>Missing</strong></td><td>No explicit PID loop rate, sensor polling rate, display refresh rate requirements</td></tr>
+              <tr><td>3.3 Usability requirements</td><td><strong>Missing</strong></td><td>No explicit usability goals</td></tr>
+              <tr><td>3.4 Interface requirements</td><td><strong>Present</strong></td><td>Section 8 API design (REST + WebSocket), section 4 UART protocol</td></tr>
+              <tr><td>3.5 Data requirements</td><td><strong>Present</strong></td><td>Section 12 data model (config, shot log)</td></tr>
+              <tr><td>3.6 Quality attributes</td><td><strong>Missing</strong></td><td>No explicit reliability, availability, maintainability targets</td></tr>
+              <tr><td>4. Verification</td><td><strong>Missing</strong></td><td>No traceability between requirements and test cases</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- IEEE 1016 Gap Analysis -->
+        <h3 id="gap-ieee-1016">Gap Analysis: IEEE 1016 (Software Design Description)</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>IEEE 1016 Section</th><th>Status</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>System architecture / decomposition</td><td><strong>Present</strong></td><td>Section 9 task architecture, module decomposition</td></tr>
+              <tr><td>Design viewpoints (context, composition, logical, dependency, interface, structure, interaction, state, algorithm, resource)</td><td><strong>Partial</strong></td><td>Context, composition, state (safety state machine), and interface viewpoints covered. Missing: dependency, resource, algorithm viewpoints</td></tr>
+              <tr><td>Design entities and relationships</td><td><strong>Partial</strong></td><td>Module decomposition present. Inter-task communication present. Missing: explicit dependency graph between modules</td></tr>
+              <tr><td>Design rationale / decisions</td><td><strong>Present</strong></td><td>Sections 7, 8, 14-16 all document decisions with rationale</td></tr>
+              <tr><td>Human interface design</td><td><strong>Partial</strong></td><td>TFT screen layouts described. Web app pages listed. No wireframes or detailed UI flows.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- IEC 60335 Gap Analysis -->
+        <h3 id="gap-iec-60335">Gap Analysis: IEC 60335-1 / IEC 60335-2-15 (Appliance Safety)</h3>
+        <p>This is the most safety-critical standard. Even for personal use, these requirements should be treated seriously — this device controls mains voltage, a heating element, and pressurized water.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>IEC 60335 Requirement</th><th>Status</th><th>Gap</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Over-temperature protection</strong></td><td><strong>CLOSED</strong></td><td>Software limit at 170 &deg;C (section 10) + hardware thermal fuse at 184-192 &deg;C (section 10, BOM). Defense-in-depth: software, watchdog, and passive hardware layers.</td></tr>
+              <tr><td><strong>Thermal cutout</strong></td><td><strong>CLOSED</strong></td><td>Thermal fuse (184-192 &deg;C) in upper thermostat slot replaces the removed bimetal thermostat. See section 10 "Layer 3: Hardware Thermal Fuse."</td></tr>
+              <tr><td><strong>Protective earthing</strong></td><td><strong>CLOSED</strong></td><td>Documented in section 10 "Protective Earthing": chassis ground, SSR heatsink bonding, enclosure bonding, factory earth preservation.</td></tr>
+              <tr><td><strong>Creepage / clearance distances</strong></td><td><strong>Not addressed</strong></td><td>Minimum distances between mains-voltage traces and low-voltage traces on any custom PCB. Relevant if designing a custom board.</td></tr>
+              <tr><td><strong>Abnormal operation test</strong></td><td><strong>CLOSED</strong></td><td>FMEA in section 17 covers: dry pump, sensor wire breaks, stuck SSR, MCU crash, power loss, and 21 total failure modes.</td></tr>
+              <tr><td><strong>Leakage current</strong></td><td><strong>Not addressed</strong></td><td>Relevant for the AC dimmer and SSR. Off-state leakage through the triac could keep the pump slightly energized.</td></tr>
+              <tr><td><strong>Pressure relief</strong></td><td><strong>Present (hardware)</strong></td><td>The OPV (over-pressure valve) is a stock mechanical component and remains in place. Open Espresso does not bypass it.</td></tr>
+              <tr><td><strong>Stability and mechanical hazards</strong></td><td><strong>N/A</strong></td><td>Not modified — the Gaggia Classic enclosure is unchanged.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout-success">
+          <div>
+            <strong>Critical finding (RESOLVED):</strong> Hardware thermal fuse is now specified in section 10 and BOM (section 14). Three-layer defense-in-depth model documented.
+          </div>
+        </div>
+
+        <!-- IEC 61508 Gap Analysis -->
+        <h3 id="gap-iec-61508">Gap Analysis: IEC 61508 (Functional Safety)</h3>
+        <p>IEC 61508 defines Safety Integrity Levels (SIL) for safety-related systems. For a domestic espresso machine, the relevant safety functions are:</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Safety Function</th><th>Current Design</th><th>SIL Equivalent</th><th>Gap</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Over-temperature shutdown</td><td>Software (170 &deg;C) + hardware thermal fuse (190 &deg;C) + watchdog</td><td>SIL 1 (met)</td><td><strong>CLOSED</strong> — Three independent layers. See section 10.</td></tr>
+              <tr><td>Over-pressure protection</td><td>Mechanical OPV (stock hardware)</td><td>N/A (purely mechanical)</td><td>Adequate. No software involvement.</td></tr>
+              <tr><td>Sensor failure detection</td><td>Software checks + FMEA (section 17)</td><td>SIL 1 (met)</td><td><strong>CLOSED</strong> — 21 failure modes analyzed in FMEA.</td></tr>
+              <tr><td>Watchdog timer</td><td>ESP32 TWDT, 500ms timeout</td><td>SIL 1 (met)</td><td><strong>CLOSED</strong> — GPIO defaults + pull-down resistors ensure safe state. See section 10.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>For a personal-use appliance, formal SIL certification is not required. However, applying SIL 1 principles (single-channel safety function with basic diagnostics) is appropriate and achievable.</p>
+        <p><strong>Recommendations from IEC 61508 (all addressed):</strong></p>
+        <ol>
+          <li><del>Perform a hazard and risk analysis (FMEA)</del> — <strong>CLOSED</strong> — Section 17</li>
+          <li><del>Document the safe state for each safety function</del> — <strong>CLOSED</strong> — Section 10 (all outputs off)</li>
+          <li><del>Verify hardware default state on MCU reset is safe</del> — <strong>CLOSED</strong> — Section 10 (GPIO defaults + pull-downs)</li>
+          <li>Use MISRA C guidelines for safety-critical code paths (PID, watchdog, fault detection) — ongoing</li>
+        </ol>
+
+        <!-- IEC 62443 Gap Analysis -->
+        <h3 id="gap-iec-62443">Gap Analysis: IEC 62443-4-2 (Cybersecurity — Embedded Devices)</h3>
+        <p>This device will be WiFi-connected on a home network. While formal cybersecurity certification is not required, the following IEC 62443 principles should be considered:</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Status</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Authentication</strong></td><td><strong>Three-tier model</strong></td><td>Open reads, session-token writes (PIN-based), admin password for OTA/destructive ops. Rate limiting on auth endpoints. WiFi password is write-only in API responses. See ICD-01 Authentication Model.</td></tr>
+              <tr><td><strong>Firmware integrity</strong></td><td><strong>Not addressed</strong></td><td>OTA updates should verify firmware signature before flashing. ESP32-S3 supports secure boot and signed OTA. Without this, a compromised network device could push malicious firmware.</td></tr>
+              <tr><td><strong>Encrypted communication</strong></td><td><strong>Not addressed</strong></td><td>WebSocket and REST API are over plain HTTP. Consider HTTPS/WSS (ESP32-S3 supports TLS, though CPU-intensive). Lower priority for home LAN.</td></tr>
+              <tr><td><strong>Secure boot</strong></td><td><strong>Not addressed</strong></td><td>ESP32-S3 supports hardware secure boot (eFuse-based). Prevents running unsigned firmware. Low priority for personal use, but trivial to enable.</td></tr>
+              <tr><td><strong>Software update mechanism</strong></td><td><strong>Present</strong></td><td>OTA firmware update via web UI (section 8).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout-success">
+          <div>
+            <strong>Recommendation (RESOLVED):</strong> Three-tier auth model implemented in ICD-01. OTA password required for firmware upload. Session PIN required for write operations. Signed OTA and secure boot documented as open questions (section 21).
+          </div>
+        </div>
+
+        <!-- EMC Gap Analysis -->
+        <h3 id="gap-emc">Gap Analysis: EMC Directive / Radio Equipment Directive</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Concern</th><th>Status</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>AC dimmer EMI</strong></td><td><strong>CLOSED</strong></td><td>EMI filter and RC snubber added to BOM (section 14). Phase-angle dimming with zero-cross detection + LC input filter + snubber across triac.</td></tr>
+              <tr><td><strong>Switch-mode PSU EMI</strong></td><td><strong>Not addressed</strong></td><td>The Hi-Link HLK-PM01 (or similar) AC-DC converter is a switch-mode supply that generates conducted emissions. An input filter capacitor (or using a pre-filtered module) is recommended.</td></tr>
+              <tr><td><strong>WiFi/BLE emissions</strong></td><td><strong>Covered by module</strong></td><td>The ESP32-S3-WROOM-1 module is FCC/CE/IC certified. As long as it is used with its integrated antenna without modification, it meets radio emission requirements.</td></tr>
+              <tr><td><strong>Cable shielding</strong></td><td><strong>Partial</strong></td><td>Section 15 mentions shielded/twisted-pair wire for signal cables. This is good practice for EMC.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout callout-success">
+          <div>
+            <strong>Recommendation (RESOLVED):</strong> LC EMI filter and RC snubber added to BOM. See section 14.
+          </div>
+        </div>
+
+        <!-- Document Structure Gap Analysis -->
+        <h3 id="gap-document">Gap Analysis: Document Structure &amp; Completeness</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Item</th><th>Status</th><th>Recommendation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Glossary / Definitions</strong></td><td><strong>CLOSED</strong></td><td>Present in front matter — 30+ terms defined.</td></tr>
+              <tr><td><strong>References</strong></td><td><strong>CLOSED</strong></td><td>Present in front matter — 12 documents referenced.</td></tr>
+              <tr><td><strong>Numbered requirements</strong></td><td><strong>CLOSED</strong></td><td>Section 16 — 39 numbered requirements (REQ-S, REQ-F, REQ-P, REQ-U).</td></tr>
+              <tr><td><strong>FMEA / Hazard analysis</strong></td><td><strong>CLOSED</strong></td><td>Section 17 — 21 failure modes with severity/detection/risk scoring.</td></tr>
+              <tr><td><strong>Test plan</strong></td><td><strong>CLOSED</strong></td><td>Section 18 — 10 safety tests, 10 functional tests, 7 unit tests, all traced to requirements.</td></tr>
+              <tr><td><strong>User characteristics</strong></td><td><strong>CLOSED</strong></td><td>Present in front matter — 5 user roles with technical levels.</td></tr>
+              <tr><td><strong>Performance requirements</strong></td><td><strong>CLOSED</strong></td><td>Section 16 — 10 performance requirements (REQ-P-001 through REQ-P-010).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Priority Actions Summary -->
+        <h3 id="priority-actions">Summary: Priority Actions</h3>
+        <p>All items below have been addressed in subsequent sections. See section 21 (Standards Gap Closure Status) for the complete closure matrix.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Priority</th><th>Action</th><th>Standard Reference</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>P0 — Safety critical</strong></td><td>Add hardware thermal fuse (190 &deg;C) in series with boiler element</td><td>IEC 60335-1/2-15</td><td><strong>CLOSED</strong> — Section 10, BOM</td></tr>
+              <tr><td><strong>P0 — Safety critical</strong></td><td>Verify ESP32-S3 GPIO default state on reset is safe</td><td>IEC 61508</td><td><strong>CLOSED</strong> — Section 10</td></tr>
+              <tr><td><strong>P0 — Safety critical</strong></td><td>Document protective earthing requirements</td><td>IEC 60335-1</td><td><strong>CLOSED</strong> — Section 10</td></tr>
+              <tr><td><strong>P1 — Important</strong></td><td>Perform FMEA for all sensor/actuator failure modes</td><td>IEC 61508</td><td><strong>CLOSED</strong> — Section 17</td></tr>
+              <tr><td><strong>P1 — Important</strong></td><td>Add numbered functional and safety requirements</td><td>IEEE 29148</td><td><strong>CLOSED</strong> — Section 16</td></tr>
+              <tr><td><strong>P1 — Important</strong></td><td>Add EMI filter on AC dimmer input</td><td>EMC best practice</td><td><strong>CLOSED</strong> — BOM, REQ-S-012</td></tr>
+              <tr><td><strong>P1 — Important</strong></td><td>Add password protection to OTA firmware endpoint</td><td>IEC 62443-4-2</td><td><strong>CLOSED</strong> — ICD-01, REQ-F-012</td></tr>
+              <tr><td><strong>P2 — Good practice</strong></td><td>Add glossary, references, performance requirements</td><td>IEEE 29148 / IEEE 1016</td><td><strong>CLOSED</strong> — Front matter, Section 16</td></tr>
+              <tr><td><strong>P2 — Good practice</strong></td><td>Add test plan mapping to safety requirements</td><td>IEEE 29148</td><td><strong>CLOSED</strong> — Section 18</td></tr>
+              <tr><td><strong>P2 — Good practice</strong></td><td>Add snubber circuit to dimmer triac</td><td>EMC best practice</td><td><strong>CLOSED</strong> — BOM</td></tr>
+              <tr><td><strong>P3 — Nice to have</strong></td><td>Enable ESP32-S3 signed OTA and secure boot</td><td>IEC 62443-4-2</td><td><strong>DOCUMENTED</strong> — Open questions</td></tr>
+              <tr><td><strong>P3 — Nice to have</strong></td><td>Add HTTPS/WSS for web app communication</td><td>IEC 62443-4-2</td><td><strong>DOCUMENTED</strong> — Open questions</td></tr>
+              <tr><td><strong>P3 — Nice to have</strong></td><td>Add user characteristics and usability requirements</td><td>IEEE 29148</td><td><strong>CLOSED</strong> — Front matter, Section 16</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- PAGE FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Previous and next pages">
+        <a href="data-model.html" class="prev-page">
+          <span class="material-symbols-rounded icon-sm">arrow_back</span>
+          Data Model
+        </a>
+        <a href="interfaces.html" class="next-page">
+          Interfaces
+          <span class="material-symbols-rounded icon-sm">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safety &amp; Profile Engine — Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="nav-home">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html" class="active">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Safety Architecture &amp; Profile Engine</h1>
+      <p class="intro">Sections 10 &amp; 11 — Defense-in-depth safety design and shot profile execution</p>
+      <div class="doc-meta">
+        <span class="tag tag-red">Safety-Critical</span>
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- SECTION 10: SAFETY ARCHITECTURE -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-10">
+        <h2>10. Safety Architecture</h2>
+
+        <p class="intro-paragraph">The safety architecture uses three independent layers arranged in a defense-in-depth model. Any single layer failing cannot cause a hazard. The layers are designed so that the most reliable protection (passive hardware) requires no software, no power, and no electronics to function.</p>
+
+        <!-- ============================================================ -->
+        <!-- 10.1 DEFENSE IN DEPTH -->
+        <!-- ============================================================ -->
+        <h3 id="defense-in-depth">Safety Design Philosophy: Defense in Depth</h3>
+
+        <div class="diagram-container">
+          <img src="diagrams/safety-layers.svg" alt="Three safety layers: Layer 1 Software (PID, fault detection), Layer 2 Hardware Watchdog (MCU resets if software hangs), Layer 3 Passive Hardware (thermal fuse, OPV — works with no software, no power, no MCU)" loading="lazy">
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Layer</th>
+                <th>Mechanism</th>
+                <th>Independence</th>
+                <th>Failure Mode</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Layer 1: Software</strong></td>
+                <td>PID control, fault detection, safety state machine</td>
+                <td>Depends on functioning MCU and sensors</td>
+                <td>Can be buggy. Catches most faults.</td>
+              </tr>
+              <tr>
+                <td><strong>Layer 2: Hardware Watchdog</strong></td>
+                <td>ESP32 TWDT — resets MCU if software hangs</td>
+                <td>Depends on functioning MCU silicon</td>
+                <td>Can fail if MCU is bricked. Resets to safe GPIO state.</td>
+              </tr>
+              <tr>
+                <td><strong>Layer 3: Passive Hardware</strong></td>
+                <td>Thermal fuse (190 &deg;C), over-pressure valve (OPV)</td>
+                <td>Works with NO software, NO power to MCU, NO electronics at all</td>
+                <td>Purely passive. Operates on physics alone.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 10.2 LAYER 3: THERMAL FUSE -->
+        <!-- ============================================================ -->
+        <h3 id="thermal-fuse">Layer 3: Hardware Thermal Fuse (MANDATORY)</h3>
+
+        <div class="callout callout-safety">
+          <span class="material-symbols-rounded icon-safety">local_fire_department</span>
+          <div>
+            <strong>This is the single most important safety component in the system.</strong>
+            <p>When the stock Gaggia Classic bimetal thermostats are removed (required for PID control), the only hardware over-temperature protection is gone. A thermal fuse must replace it. This component operates with no software, no power, and no MCU. It is the last line of defense.</p>
+          </div>
+        </div>
+
+        <div class="diagram-container">
+          <img src="diagrams/thermal-fuse-wiring.svg" alt="Thermal fuse wiring: mains power to 190 degrees C thermal fuse to SSR to boiler element, wired in series. Opens permanently if boiler surface exceeds 190 degrees C." loading="lazy">
+        </div>
+
+        <p>The thermal fuse is wired <strong>in series</strong> with the boiler heating element. It opens permanently if the boiler surface exceeds 190 &deg;C. This works even if:</p>
+        <ul>
+          <li>The MCU is dead</li>
+          <li>The software has a bug</li>
+          <li>The SSR is stuck on</li>
+          <li>The thermocouple is disconnected</li>
+          <li>The power supply has failed</li>
+          <li>All electronics are destroyed</li>
+        </ul>
+
+        <p>Install the thermal fuse in the upper thermostat slot on the boiler (the slot vacated by the steam thermostat).</p>
+
+        <h4>Thermal Fuse Specifications</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Spec</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Type</strong></td><td>Non-resettable thermal fuse (Microtemp / Cantherm / Aupo) OR resettable bimetal thermostat</td></tr>
+              <tr><td><strong>Temperature rating</strong></td><td>184&ndash;192 &deg;C (above max steam temp of 165 &deg;C, below aluminum damage threshold)</td></tr>
+              <tr><td><strong>Current rating</strong></td><td>&ge; 16 A at 250 VAC (must handle full boiler element current)</td></tr>
+              <tr><td><strong>Mounting</strong></td><td>M4 thread into boiler thermostat slot, with thermal paste</td></tr>
+              <tr><td><strong>Cost</strong></td><td>$1&ndash;3</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="material-symbols-rounded">info</span>
+          <div>
+            <strong>Alternative:</strong> A resettable bimetal thermostat (KSD301, 180 &deg;C NC) can be used instead. It resets automatically when temperature drops. The non-resettable thermal fuse is safer (forces investigation after a fault) but requires replacement after tripping.
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 10.3 LAYER 2: WATCHDOG TIMER -->
+        <!-- ============================================================ -->
+        <h3 id="watchdog-timer">Layer 2: Watchdog Timer</h3>
+
+        <div class="diagram-container">
+          <img src="diagrams/watchdog-config.svg" alt="Hardware watchdog configuration: ESP32 TWDT with 500ms timeout, ControlTask must feed every 100ms, tolerates up to 5 missed feeds, GPIO outputs default to OFF on reset" loading="lazy">
+        </div>
+
+        <p>The ESP32 Task Watchdog Timer (TWDT) is a hardware peripheral that resets the MCU if the control task stops responding. The watchdog is configured as follows:</p>
+
+        <ul>
+          <li><strong>Feed interval:</strong> ControlTask must feed the watchdog every 100 ms</li>
+          <li><strong>Timeout:</strong> 500 ms (tolerates up to 5 missed feeds before reset, providing margin for transient delays without reducing safety)</li>
+          <li><strong>On timeout:</strong> Hardware reset &mdash; all outputs go to safe state</li>
+          <li><strong>GPIO behavior on reset:</strong> All GPIO outputs default to OFF (SSR off, pump off, solenoid off)</li>
+        </ul>
+
+        <!-- ============================================================ -->
+        <!-- 10.4 LAYER 1: SOFTWARE FAULT DETECTION -->
+        <!-- ============================================================ -->
+        <h3 id="fault-detection">Layer 1: Software Fault Detection &amp; Response</h3>
+
+        <p>The software layer monitors all sensors and actuators continuously and enters a safe FAULT state when anomalies are detected. The following table enumerates every monitored fault condition:</p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Fault</th>
+                <th>Detection Method</th>
+                <th>Response</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Thermocouple open/short</strong></td>
+                <td>MAX31855 fault bits</td>
+                <td>Immediately disable boiler SSR. Enter FAULT state.</td>
+              </tr>
+              <tr>
+                <td><strong>Thermocouple reads &gt; 170 &deg;C</strong></td>
+                <td>Temperature threshold</td>
+                <td>Immediately disable boiler SSR. Enter FAULT state.</td>
+              </tr>
+              <tr>
+                <td><strong>Pressure sensor reads &gt; 15 bar</strong></td>
+                <td>Pressure threshold</td>
+                <td>Immediately stop pump. Open solenoid. Enter FAULT state.</td>
+              </tr>
+              <tr>
+                <td><strong>Pressure sensor reads &lt; &minus;0.5 bar</strong></td>
+                <td>Sensor disconnected</td>
+                <td>Warning only (can still operate).</td>
+              </tr>
+              <tr>
+                <td><strong>No sensor readings for &gt; 200 ms</strong></td>
+                <td>Timeout</td>
+                <td>Disable all outputs. Enter FAULT state.</td>
+              </tr>
+              <tr>
+                <td><strong>Boiler on for &gt; 20 min continuous</strong></td>
+                <td>Time limit</td>
+                <td>Disable boiler SSR. Require manual reset.</td>
+              </tr>
+              <tr>
+                <td><strong>Main loop frequency drops below 50 Hz</strong></td>
+                <td>Performance monitor</td>
+                <td>Log warning. If &lt; 10 Hz, enter FAULT state.</td>
+              </tr>
+              <tr>
+                <td><strong>SSR commanded off but temp still rising</strong></td>
+                <td>Stuck SSR detection</td>
+                <td>Enter FAULT state. Alert user (SSR may need replacement).</td>
+              </tr>
+              <tr>
+                <td><strong>WiFi/WebSocket connection lost</strong></td>
+                <td>Network monitor</td>
+                <td>No action (not safety-relevant). Log warning.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 10.5 GPIO DEFAULT STATE -->
+        <!-- ============================================================ -->
+        <h3 id="gpio-default-state">GPIO Default State on Reset (CRITICAL)</h3>
+
+        <div class="callout callout-safety">
+          <span class="material-symbols-rounded icon-safety">warning</span>
+          <div>
+            <strong>All actuator outputs must default to OFF on any reset condition.</strong>
+            <p>On ESP32-S3 power-on or watchdog reset, all GPIO pins default to <strong>input mode (high-impedance)</strong>. The SSR, dimmer, and solenoid modules must be confirmed to have pull-down resistors or internal logic that defaults to OFF when the control input is floating.</p>
+          </div>
+        </div>
+
+        <p>On ESP32-S3 power-on or watchdog reset, all GPIO pins default to <strong>input mode (high-impedance)</strong>. This means:</p>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Pin</th><th>Function</th><th>Reset State</th><th>Actuator State</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>GPIO39</code></td>
+                <td>SSR control</td>
+                <td>High-impedance &mdash; SSR input sees no drive</td>
+                <td><strong>SSR OFF</strong> (safe)</td>
+              </tr>
+              <tr>
+                <td><code>GPIO41</code></td>
+                <td>Dimmer gate</td>
+                <td>High-impedance &mdash; triac gate not triggered</td>
+                <td><strong>Pump OFF</strong> (safe)</td>
+              </tr>
+              <tr>
+                <td><code>GPIO42</code></td>
+                <td>Solenoid control</td>
+                <td>High-impedance &mdash; relay not energized</td>
+                <td><strong>Valve closed</strong> (safe)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="material-symbols-rounded">engineering</span>
+          <div>
+            <strong>Verification required:</strong> The SSR and dimmer modules must be confirmed to have <strong>pull-down resistors</strong> or internal logic that defaults to OFF when the control input is floating. If not, external 10 k&Omega; pull-down resistors must be added to GPIO39, GPIO41, and GPIO42 to guarantee safe state on reset.
+          </div>
+        </div>
+
+        <p>The very first lines of firmware initialization force all actuator outputs LOW before any other code runs:</p>
+
+        <pre><code>// First lines of setup(), before ANY other initialization:
+void safetyGpioInit() {
+    // Force all actuator outputs LOW immediately
+    gpio_set_direction(GPIO_NUM_39, GPIO_MODE_OUTPUT);  // SSR
+    gpio_set_level(GPIO_NUM_39, 0);
+    gpio_set_direction(GPIO_NUM_41, GPIO_MODE_OUTPUT);  // Dimmer gate
+    gpio_set_level(GPIO_NUM_41, 0);
+    gpio_set_direction(GPIO_NUM_42, GPIO_MODE_OUTPUT);  // Solenoid
+    gpio_set_level(GPIO_NUM_42, 0);
+}</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- 10.6 PROTECTIVE EARTHING -->
+        <!-- ============================================================ -->
+        <h3 id="protective-earthing">Protective Earthing</h3>
+
+        <p>The Gaggia Classic chassis is a <strong>Class I appliance</strong> &mdash; it relies on protective earth (ground) for safety. All of the following must be maintained during the Open Espresso modification:</p>
+
+        <ol>
+          <li><strong>Chassis ground:</strong> The mains earth wire must have a secure metal-to-metal connection to the chassis via a ring terminal and bolt. Verify with a multimeter (&lt; 0.1 &Omega; between earth pin and chassis).</li>
+          <li><strong>SSR heatsink:</strong> If the SSR is mounted on a metal heatsink, the heatsink must either be earthed or insulated from the chassis.</li>
+          <li><strong>External enclosure:</strong> If the enclosure is metal, it must be bonded to chassis earth. If plastic (ABS/PETG), no earthing needed.</li>
+          <li><strong>No interruption:</strong> The Open Espresso modification must not interrupt or degrade the existing earth path. Never disconnect or reroute the factory earth wire.</li>
+        </ol>
+
+        <!-- ============================================================ -->
+        <!-- 10.7 SAFETY STATE MACHINE -->
+        <!-- ============================================================ -->
+        <h3 id="safety-state-machine">Safety State Machine</h3>
+
+        <p>The state machine defines all eight states from the <code>MachineState</code> enum (ICD-02), with labeled transitions. The FAULT state is reachable from <strong>any</strong> state when a fault condition is detected.</p>
+
+        <div class="diagram-container">
+          <img src="diagrams/safety-state-machine.svg" alt="Eight-state safety state machine: IDLE, HEATING, READY, BREWING, STEAM, FLUSHING, DESCALING, DONE, with FAULT reachable from any state on thermocouple fault, over-temp, over-pressure, sensor timeout, stuck SSR, continuous heat timeout, or control loop frequency drop" loading="lazy">
+        </div>
+
+        <h4>State Descriptions</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>State</th><th>Actuator Behavior</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>IDLE</strong></td>
+                <td>SSR = PID (heating)</td>
+                <td>Machine is on, boiler heating toward setpoint. Waiting for user action.</td>
+              </tr>
+              <tr>
+                <td><strong>HEATING</strong></td>
+                <td>SSR = PID</td>
+                <td>Temperature below setpoint &minus; 2 &deg;C. Actively heating. Not ready to brew.</td>
+              </tr>
+              <tr>
+                <td><strong>READY</strong></td>
+                <td>SSR = PID</td>
+                <td>Temperature at or above setpoint &minus; 1 &deg;C. Ready for brew, steam, flush, or descale.</td>
+              </tr>
+              <tr>
+                <td><strong>BREWING</strong></td>
+                <td>Profile engine active</td>
+                <td>Shot in progress. Profile engine controls pump, solenoid, and temperature.</td>
+              </tr>
+              <tr>
+                <td><strong>STEAM</strong></td>
+                <td>SSR = PID (steam setpoint)</td>
+                <td>Steam switch is on. Boiler heating to steam temperature target.</td>
+              </tr>
+              <tr>
+                <td><strong>FLUSHING</strong></td>
+                <td>Pump ON, solenoid cycling</td>
+                <td>Flush or backflush cycle active.</td>
+              </tr>
+              <tr>
+                <td><strong>DESCALING</strong></td>
+                <td>Pump cycling per descale program</td>
+                <td>Descaling cycle running per the programmed sequence.</td>
+              </tr>
+              <tr>
+                <td><strong>DONE</strong></td>
+                <td>All outputs safe</td>
+                <td>Shot, steam, or descale just completed. Showing summary. Auto-returns to IDLE after 3 s.</td>
+              </tr>
+              <tr>
+                <td><strong>FAULT</strong></td>
+                <td>All outputs OFF</td>
+                <td>Safety fault detected. Notification shown to user. Exit requires power cycle or explicit reset command via API.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4>Transition Guards</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>Trigger</th>
+                <th>Guard Conditions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>IDLE</td>
+                <td>HEATING</td>
+                <td>Boot / temp drops</td>
+                <td><code>temp &lt; setpoint - 2&deg;C</code></td>
+              </tr>
+              <tr>
+                <td>HEATING</td>
+                <td>READY</td>
+                <td>Temp reached</td>
+                <td><code>temp &ge; setpoint - 1&deg;C</code> (hysteresis)</td>
+              </tr>
+              <tr>
+                <td>READY</td>
+                <td>BREWING</td>
+                <td>Brew switch ON</td>
+                <td><code>temp &ge; setpoint - 2&deg;C AND no active fault</code></td>
+              </tr>
+              <tr>
+                <td>READY</td>
+                <td>STEAM</td>
+                <td>Steam switch ON</td>
+                <td><code>steam_switch == HIGH</code></td>
+              </tr>
+              <tr>
+                <td>READY</td>
+                <td>DESCALING</td>
+                <td>Descale command</td>
+                <td>Via web UI or TFT menu</td>
+              </tr>
+              <tr>
+                <td>READY</td>
+                <td>FLUSHING</td>
+                <td>Flush command</td>
+                <td>Via web UI, TFT, or backflush switch combo</td>
+              </tr>
+              <tr>
+                <td>BREWING</td>
+                <td>DONE</td>
+                <td>Shot complete</td>
+                <td>Any global stop condition met OR brew switch OFF</td>
+              </tr>
+              <tr>
+                <td>STEAM</td>
+                <td>DONE</td>
+                <td>Steam complete</td>
+                <td><code>steam_switch == LOW</code></td>
+              </tr>
+              <tr>
+                <td>FLUSHING</td>
+                <td>IDLE</td>
+                <td>Flush complete</td>
+                <td>Flush cycle finished</td>
+              </tr>
+              <tr>
+                <td>DESCALING</td>
+                <td>DONE</td>
+                <td>Descale complete</td>
+                <td>Descale program finished</td>
+              </tr>
+              <tr>
+                <td>DONE</td>
+                <td>IDLE</td>
+                <td>Timeout</td>
+                <td>3 seconds after shot end</td>
+              </tr>
+              <tr>
+                <td><em>any</em></td>
+                <td>FAULT</td>
+                <td>Fault detected</td>
+                <td>See fault table in Layer 1 above</td>
+              </tr>
+              <tr>
+                <td>FAULT</td>
+                <td>IDLE</td>
+                <td>Manual reset</td>
+                <td>Power cycle OR explicit reset command via API</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-safety">
+          <span class="material-symbols-rounded icon-safety">hardware</span>
+          <div>
+            <strong>Brew switch is hardware authority:</strong> The physical brew switch is the <strong>hardware authority</strong> for shot start/stop. If the brew switch is OFF, a WebSocket <code>start_shot</code> command is ignored. If the brew switch is turned OFF during a shot, the shot stops immediately regardless of software state.
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 10.8 COMPILE-TIME SAFETY LIMITS -->
+        <!-- ============================================================ -->
+        <h3 id="safety-constants">Compile-Time Safety Limits</h3>
+
+        <p>These constants are defined at compile time in <code>safety_limits.h</code> and are <strong>not configurable at runtime</strong>. Changing any of these values requires a firmware rebuild, providing a hard barrier against accidental misconfiguration.</p>
+
+        <pre><code>// safety_limits.h — these are NOT configurable at runtime
+constexpr float    MAX_BOILER_TEMP_C             = 170.0f;
+constexpr float    MAX_BREW_PRESSURE_BAR          = 13.0f;
+constexpr float    MAX_STEAM_TEMP_C               = 165.0f;
+constexpr uint32_t MAX_CONTINUOUS_HEAT_MS          = 20 * 60 * 1000; // 20 minutes
+constexpr uint32_t WATCHDOG_TIMEOUT_MS             = 500;
+constexpr uint32_t SENSOR_TIMEOUT_MS               = 200;
+constexpr float    PUMP_MAX_POWER_PCT              = 100.0f;
+constexpr float    STUCK_SSR_TEMP_RISE_THRESHOLD   = 5.0f;   // °C rise after SSR off = stuck
+constexpr uint32_t STUCK_SSR_DETECT_MS             = 3000;    // check 3s after SSR off command</code></pre>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Constant</th><th>Value</th><th>Rationale</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>MAX_BOILER_TEMP_C</code></td>
+                <td>170.0 &deg;C</td>
+                <td>Above max steam temp (165 &deg;C), well below thermal fuse trip point (190 &deg;C) and aluminum damage threshold. Provides 20 &deg;C margin for Layer 3 to act.</td>
+              </tr>
+              <tr>
+                <td><code>MAX_BREW_PRESSURE_BAR</code></td>
+                <td>13.0 bar</td>
+                <td>Above any reasonable brewing pressure (max ~12 bar for turbo shots), below the mechanical OPV setting. Standard espresso operates at 6&ndash;9 bar.</td>
+              </tr>
+              <tr>
+                <td><code>MAX_STEAM_TEMP_C</code></td>
+                <td>165.0 &deg;C</td>
+                <td>Standard steam temperature ceiling. Above typical steam setpoint of 155 &deg;C, below Layer 1 cutoff at 170 &deg;C.</td>
+              </tr>
+              <tr>
+                <td><code>MAX_CONTINUOUS_HEAT_MS</code></td>
+                <td>1,200,000 ms (20 min)</td>
+                <td>No reasonable espresso workflow requires 20 minutes of continuous boiler heating. A stuck-on SSR or runaway PID would be caught well before the thermal fuse trips.</td>
+              </tr>
+              <tr>
+                <td><code>WATCHDOG_TIMEOUT_MS</code></td>
+                <td>500 ms</td>
+                <td>Tolerates up to 5 missed 100 ms feeds. Long enough to avoid spurious resets from transient delays, short enough to catch genuine hangs.</td>
+              </tr>
+              <tr>
+                <td><code>SENSOR_TIMEOUT_MS</code></td>
+                <td>200 ms</td>
+                <td>If no sensor data arrives for 200 ms, the control loop is flying blind. Safer to shut down than to operate without feedback.</td>
+              </tr>
+              <tr>
+                <td><code>PUMP_MAX_POWER_PCT</code></td>
+                <td>100.0%</td>
+                <td>Software ceiling for pump dimmer. Can be lowered for specific profiles but never exceeded.</td>
+              </tr>
+              <tr>
+                <td><code>STUCK_SSR_TEMP_RISE_THRESHOLD</code></td>
+                <td>5.0 &deg;C</td>
+                <td>If temperature rises by 5 &deg;C after the SSR is commanded off, the SSR is likely stuck closed (welded contacts). Triggers FAULT state.</td>
+              </tr>
+              <tr>
+                <td><code>STUCK_SSR_DETECT_MS</code></td>
+                <td>3,000 ms</td>
+                <td>Wait 3 seconds after SSR off command before checking for temperature rise. Accounts for thermal inertia in the boiler and thermocouple lag.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- SECTION 11: PROFILE ENGINE -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-11">
+        <h2>11. Profile Engine</h2>
+
+        <p class="intro-paragraph">The profile engine executes multi-phase shot profiles, controlling pump pressure or flow rate through configurable transition curves. It is one of the strongest parts of the current design. The rewrite preserves its semantics while cleaning up the implementation.</p>
+
+        <!-- ============================================================ -->
+        <!-- 11.1 PROFILE DATA MODEL -->
+        <!-- ============================================================ -->
+        <h3 id="profile-data-model">Profile Data Model</h3>
+
+        <p>A profile is a named sequence of 1&ndash;10 phases, each controlling either pressure or flow, with per-phase stop conditions and a global stop condition set that applies across all phases.</p>
+
+        <pre><code>Profile
+├── name: string (max 32 chars)
+├── phases: Phase[] (1-10 phases)
+│   ├── type: PRESSURE | FLOW
+│   ├── target: Transition
+│   │   ├── start: float (optional, default 0, -1 = "from current")
+│   │   ├── end: float
+│   │   ├── curve: INSTANT | LINEAR | EASE_IN | EASE_OUT | EASE_IN_OUT
+│   │   └── duration_ms: uint32
+│   ├── restriction: float (-1 = none)
+│   │   (max flow if type=PRESSURE, max pressure if type=FLOW)
+│   ├── stop_conditions: StopConditions
+│   │   ├── time_ms: int32 (-1 = disabled)
+│   │   ├── pressure_above: float (-1 = disabled)
+│   │   ├── pressure_below: float (-1 = disabled)
+│   │   ├── flow_above: float (-1 = disabled)
+│   │   ├── flow_below: float (-1 = disabled)
+│   │   ├── weight_g: float (-1 = disabled)
+│   │   └── water_pumped_ml: float (-1 = disabled)
+│   └── temperature_target: float (per-phase temperature)
+│
+└── global_stop_conditions: GlobalStopConditions
+    ├── time_ms: int32 (-1 = disabled)
+    ├── weight_g: float (-1 = disabled)
+    └── water_pumped_ml: float (-1 = disabled)</code></pre>
+
+        <h4>Field Semantics</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>name</code></td>
+                <td><code>string</code></td>
+                <td>Human-readable profile name, max 32 characters.</td>
+              </tr>
+              <tr>
+                <td><code>phases</code></td>
+                <td><code>Phase[]</code></td>
+                <td>Ordered array of 1&ndash;10 phases. Executed sequentially. Each phase runs until one of its stop conditions is met, then advances to the next phase.</td>
+              </tr>
+              <tr>
+                <td><code>type</code></td>
+                <td><code>enum</code></td>
+                <td><code>PRESSURE</code> &mdash; control pump to achieve target pressure. <code>FLOW</code> &mdash; control pump to achieve target flow rate.</td>
+              </tr>
+              <tr>
+                <td><code>target.start</code></td>
+                <td><code>float</code></td>
+                <td>Starting value for the transition. Defaults to 0. Use <code>-1</code> for &ldquo;from current value&rdquo; to allow smooth transitions between phases without jumps.</td>
+              </tr>
+              <tr>
+                <td><code>target.end</code></td>
+                <td><code>float</code></td>
+                <td>Final value the transition ramps toward. Held constant after the transition duration elapses.</td>
+              </tr>
+              <tr>
+                <td><code>target.curve</code></td>
+                <td><code>enum</code></td>
+                <td>Transition curve shape: <code>INSTANT</code>, <code>LINEAR</code>, <code>EASE_IN</code>, <code>EASE_OUT</code>, or <code>EASE_IN_OUT</code>.</td>
+              </tr>
+              <tr>
+                <td><code>target.duration_ms</code></td>
+                <td><code>uint32</code></td>
+                <td>Duration of the transition in milliseconds. After this time, the target value is held at <code>end</code>.</td>
+              </tr>
+              <tr>
+                <td><code>restriction</code></td>
+                <td><code>float</code></td>
+                <td>Cross-domain limit. If <code>type=PRESSURE</code>, this is the maximum allowed flow rate (ml/s). If <code>type=FLOW</code>, this is the maximum allowed pressure (bar). Use <code>-1</code> to disable.</td>
+              </tr>
+              <tr>
+                <td><code>stop_conditions</code></td>
+                <td><code>StopConditions</code></td>
+                <td>Per-phase exit conditions. Any single condition being met advances to the next phase. All set to <code>-1</code> (disabled) means the phase runs until a global stop condition fires.</td>
+              </tr>
+              <tr>
+                <td><code>temperature_target</code></td>
+                <td><code>float</code></td>
+                <td>Per-phase boiler temperature setpoint in &deg;C. Allows temperature profiling across phases (e.g., declining temperature shot).</td>
+              </tr>
+              <tr>
+                <td><code>global_stop_conditions</code></td>
+                <td><code>GlobalStopConditions</code></td>
+                <td>Conditions that end the entire shot regardless of current phase. Checked continuously across all phases.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 11.2 TRANSITION CURVES -->
+        <!-- ============================================================ -->
+        <h3 id="transition-curves">Transition Curve Algorithms</h3>
+
+        <p>The profile engine supports five transition curves that control how the target value (pressure or flow) ramps from <code>start</code> to <code>end</code> over <code>duration_ms</code>. The normalized time parameter <code>t</code> is defined as <code>elapsed_ms / duration_ms</code>, clamped to [0, 1].</p>
+
+        <pre><code>// Transition curve implementations
+// t = elapsed_ms / duration_ms, clamped to [0.0, 1.0]
+// Returns a value in [0.0, 1.0] representing the progress fraction.
+// Final output = start + (end - start) * curve(t)
+
+float curve_instant(float t) {
+    // Jump immediately to end value. No ramp.
+    return 1.0f;
+}
+
+float curve_linear(float t) {
+    // Constant rate of change from start to end.
+    return t;
+}
+
+float curve_ease_in(float t) {
+    // Slow start, accelerating toward end.
+    // Quadratic ease-in: f(t) = t²
+    return t * t;
+}
+
+float curve_ease_out(float t) {
+    // Fast start, decelerating toward end.
+    // Quadratic ease-out: f(t) = 1 - (1 - t)²
+    return 1.0f - (1.0f - t) * (1.0f - t);
+}
+
+float curve_ease_in_out(float t) {
+    // Slow start, fast middle, slow end.
+    // Piecewise quadratic (smoothstep variant):
+    //   t < 0.5: f(t) = 2t²
+    //   t ≥ 0.5: f(t) = 1 - (-2t + 2)² / 2
+    if (t < 0.5f) {
+        return 2.0f * t * t;
+    } else {
+        float u = -2.0f * t + 2.0f;
+        return 1.0f - (u * u) / 2.0f;
+    }
+}</code></pre>
+
+        <h4>Applying a Transition Curve</h4>
+
+        <p>The control loop calls the transition function on every tick to compute the current setpoint:</p>
+
+        <pre><code>// Called every control loop tick (~10 ms) during a phase
+float computePhaseTarget(const Phase&amp; phase, uint32_t elapsed_ms) {
+    float start = phase.target.start;
+    float end   = phase.target.end;
+
+    // Handle "from current" sentinel
+    if (start == -1.0f) {
+        start = getCurrentSensorValue(phase.type);  // read live pressure or flow
+    }
+
+    // If duration is 0 or INSTANT curve, jump immediately
+    if (phase.target.duration_ms == 0 || phase.target.curve == INSTANT) {
+        return end;
+    }
+
+    // Compute normalized time, clamped to [0, 1]
+    float t = static_cast&lt;float&gt;(elapsed_ms) / static_cast&lt;float&gt;(phase.target.duration_ms);
+    if (t > 1.0f) t = 1.0f;
+
+    // Apply the selected curve function
+    float progress = 0.0f;
+    switch (phase.target.curve) {
+        case LINEAR:      progress = curve_linear(t);      break;
+        case EASE_IN:     progress = curve_ease_in(t);     break;
+        case EASE_OUT:    progress = curve_ease_out(t);    break;
+        case EASE_IN_OUT: progress = curve_ease_in_out(t); break;
+        default:          progress = 1.0f;                 break;  // fallback to instant
+    }
+
+    return start + (end - start) * progress;
+}</code></pre>
+
+        <h4>Curve Behavior Summary</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Curve</th><th>Formula</th><th>Behavior</th><th>Use Case</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>INSTANT</code></td>
+                <td><code>f(t) = 1</code></td>
+                <td>Jump immediately to end value</td>
+                <td>Hold phases, abrupt changes</td>
+              </tr>
+              <tr>
+                <td><code>LINEAR</code></td>
+                <td><code>f(t) = t</code></td>
+                <td>Constant rate of change</td>
+                <td>Pre-infusion ramp, predictable transitions</td>
+              </tr>
+              <tr>
+                <td><code>EASE_IN</code></td>
+                <td><code>f(t) = t&sup2;</code></td>
+                <td>Slow start, accelerating</td>
+                <td>Gentle ramp-up to extraction pressure</td>
+              </tr>
+              <tr>
+                <td><code>EASE_OUT</code></td>
+                <td><code>f(t) = 1 - (1 - t)&sup2;</code></td>
+                <td>Fast start, decelerating</td>
+                <td>Quick initial build, gentle settle</td>
+              </tr>
+              <tr>
+                <td><code>EASE_IN_OUT</code></td>
+                <td><code>piecewise t&sup2;</code></td>
+                <td>Slow start, fast middle, slow end</td>
+                <td>Smooth, natural-feeling transitions</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 11.3 STOP CONDITIONS -->
+        <!-- ============================================================ -->
+        <h3 id="stop-conditions">Stop Condition Evaluation</h3>
+
+        <p>Stop conditions are evaluated on every control loop tick. <strong>Per-phase</strong> conditions advance to the next phase. <strong>Global</strong> conditions end the entire shot. Within a set of conditions, they are combined with OR logic &mdash; the first condition met triggers the stop.</p>
+
+        <pre><code>// Evaluated every control loop tick (~10 ms)
+bool checkPhaseStopConditions(const Phase&amp; phase, const ShotState&amp; state) {
+    const auto&amp; sc = phase.stop_conditions;
+
+    if (sc.time_ms &gt; 0 &amp;&amp; state.phase_elapsed_ms &gt;= (uint32_t)sc.time_ms)
+        return true;
+    if (sc.pressure_above &gt; 0.0f &amp;&amp; state.pressure_bar &gt;= sc.pressure_above)
+        return true;
+    if (sc.pressure_below &gt; 0.0f &amp;&amp; state.pressure_bar &lt;= sc.pressure_below)
+        return true;
+    if (sc.flow_above &gt; 0.0f &amp;&amp; state.flow_ml_s &gt;= sc.flow_above)
+        return true;
+    if (sc.flow_below &gt; 0.0f &amp;&amp; state.flow_ml_s &lt;= sc.flow_below)
+        return true;
+    if (sc.weight_g &gt; 0.0f &amp;&amp; state.weight_g &gt;= sc.weight_g)
+        return true;
+    if (sc.water_pumped_ml &gt; 0.0f &amp;&amp; state.water_pumped_ml &gt;= sc.water_pumped_ml)
+        return true;
+
+    return false;
+}
+
+bool checkGlobalStopConditions(const Profile&amp; profile, const ShotState&amp; state) {
+    const auto&amp; gsc = profile.global_stop_conditions;
+
+    if (gsc.time_ms &gt; 0 &amp;&amp; state.shot_elapsed_ms &gt;= (uint32_t)gsc.time_ms)
+        return true;
+    if (gsc.weight_g &gt; 0.0f &amp;&amp; state.weight_g &gt;= gsc.weight_g)
+        return true;
+    if (gsc.water_pumped_ml &gt; 0.0f &amp;&amp; state.water_pumped_ml &gt;= gsc.water_pumped_ml)
+        return true;
+
+    return false;
+}</code></pre>
+
+        <h4>Per-Phase Stop Conditions</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Condition</th><th>Type</th><th>Sentinel</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>time_ms</code></td>
+                <td><code>int32</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Maximum phase duration in milliseconds.</td>
+              </tr>
+              <tr>
+                <td><code>pressure_above</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Advance when measured pressure exceeds this value (bar).</td>
+              </tr>
+              <tr>
+                <td><code>pressure_below</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Advance when measured pressure drops below this value (bar).</td>
+              </tr>
+              <tr>
+                <td><code>flow_above</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Advance when measured flow rate exceeds this value (ml/s).</td>
+              </tr>
+              <tr>
+                <td><code>flow_below</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Advance when measured flow rate drops below this value (ml/s).</td>
+              </tr>
+              <tr>
+                <td><code>weight_g</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Advance when BLE scale weight reaches this value (grams).</td>
+              </tr>
+              <tr>
+                <td><code>water_pumped_ml</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Advance when estimated water volume pumped reaches this value (ml). Estimated from flow sensor pulse count.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4>Global Stop Conditions</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Condition</th><th>Type</th><th>Sentinel</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>time_ms</code></td>
+                <td><code>int32</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Maximum total shot duration in milliseconds. Safety backstop for runaway shots.</td>
+              </tr>
+              <tr>
+                <td><code>weight_g</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Target beverage weight in grams. Primary stop condition for weight-based dosing via BLE scale.</td>
+              </tr>
+              <tr>
+                <td><code>water_pumped_ml</code></td>
+                <td><code>float</code></td>
+                <td><code>-1</code> = disabled</td>
+                <td>Target total water volume in ml. Fallback for when no BLE scale is connected.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 11.4 EXAMPLE PROFILE -->
+        <!-- ============================================================ -->
+        <h3 id="example-profile">Example Profile: Classic 9-Bar Shot</h3>
+
+        <p>This example demonstrates a two-phase profile with pre-infusion and main extraction, using global weight-based stop conditions:</p>
+
+        <pre><code>{
+  "name": "Classic 9 Bar",
+  "phases": [
+    {
+      "type": "PRESSURE",
+      "target": { "end": 3.0, "curve": "LINEAR", "duration_ms": 5000 },
+      "restriction": -1,
+      "stop_conditions": { "time_ms": 8000, "pressure_above": 3.0 },
+      "temperature_target": 93.0
+    },
+    {
+      "type": "PRESSURE",
+      "target": { "end": 9.0, "curve": "EASE_IN", "duration_ms": 3000 },
+      "restriction": -1,
+      "stop_conditions": {},
+      "temperature_target": 93.0
+    }
+  ],
+  "global_stop_conditions": {
+    "weight_g": 36.0,
+    "time_ms": 60000
+  }
+}</code></pre>
+
+        <h4>Phase-by-Phase Breakdown</h4>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Phase</th><th>Type</th><th>Target</th><th>Curve</th><th>Duration</th><th>Stop Conditions</th><th>Temperature</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>0: Pre-infusion</strong></td>
+                <td>PRESSURE</td>
+                <td>0 &rarr; 3.0 bar</td>
+                <td>LINEAR</td>
+                <td>5,000 ms</td>
+                <td>Time &ge; 8,000 ms OR pressure &ge; 3.0 bar</td>
+                <td>93.0 &deg;C</td>
+              </tr>
+              <tr>
+                <td><strong>1: Main extraction</strong></td>
+                <td>PRESSURE</td>
+                <td>0 &rarr; 9.0 bar</td>
+                <td>EASE_IN</td>
+                <td>3,000 ms</td>
+                <td>None (relies on global conditions)</td>
+                <td>93.0 &deg;C</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p><strong>Shot behavior:</strong> Phase 0 ramps pressure linearly to 3 bar over 5 seconds. If the puck resistance causes pressure to reach 3 bar before the ramp completes, the phase advances early. An 8-second timeout acts as a safety backstop. Phase 1 ramps to 9 bar using a quadratic ease-in curve over 3 seconds, then holds at 9 bar. The shot ends globally when the BLE scale reads 36 g or when total shot time reaches 60 seconds.</p>
+
+        <div class="callout callout-info">
+          <span class="material-symbols-rounded">lightbulb</span>
+          <div>
+            <strong>Smooth transitions:</strong> The <code>target.start</code> field is optional (defaults to 0). Use <code>-1</code> for &ldquo;from current value&rdquo; to allow smooth transitions between phases without jumps. This is particularly useful for pressure decline profiles where Phase 2 should begin from wherever Phase 1 ended.
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 11.5 PROFILE ENGINE EXECUTION LOOP -->
+        <!-- ============================================================ -->
+        <h3 id="execution-loop">Profile Engine Execution Loop</h3>
+
+        <p>The profile engine runs inside ControlTask on Core 0 and executes at the control loop frequency (~100 Hz). On each tick, it computes the current phase target, checks stop conditions, and outputs a setpoint to the PID or pump driver.</p>
+
+        <pre><code>// Profile engine main loop — called every control tick (~10 ms)
+void ProfileEngine::tick(const SensorReading&amp; sensors, uint32_t now_ms) {
+    if (state_ == ProfileState::IDLE) return;
+
+    uint32_t shot_elapsed = now_ms - shot_start_ms_;
+    uint32_t phase_elapsed = now_ms - phase_start_ms_;
+
+    // 1. Check global stop conditions first (highest priority)
+    if (checkGlobalStopConditions(profile_, shotState_)) {
+        endShot(StopReason::GLOBAL_CONDITION);
+        return;
+    }
+
+    // 2. Check per-phase stop conditions
+    const Phase&amp; current = profile_.phases[current_phase_];
+    if (checkPhaseStopConditions(current, shotState_)) {
+        // Advance to next phase, or end if no more phases
+        current_phase_++;
+        if (current_phase_ &gt;= profile_.phases.size()) {
+            endShot(StopReason::LAST_PHASE_COMPLETE);
+            return;
+        }
+        phase_start_ms_ = now_ms;
+        return;  // next tick will compute new phase target
+    }
+
+    // 3. Compute target setpoint from transition curve
+    float target = computePhaseTarget(current, phase_elapsed);
+
+    // 4. Apply cross-domain restriction
+    if (current.restriction &gt; 0.0f) {
+        if (current.type == PhaseType::PRESSURE) {
+            // Limit flow rate while targeting pressure
+            if (sensors.flow_ml_s &gt; current.restriction) {
+                target = reducePressureToLimitFlow(target, sensors, current.restriction);
+            }
+        } else {
+            // Limit pressure while targeting flow
+            if (sensors.pressure_bar &gt; current.restriction) {
+                target = reduceFlowToLimitPressure(target, sensors, current.restriction);
+            }
+        }
+    }
+
+    // 5. Output setpoint to pump controller
+    if (current.type == PhaseType::PRESSURE) {
+        pumpController_.setTargetPressure(target);
+    } else {
+        pumpController_.setTargetFlow(target);
+    }
+
+    // 6. Update temperature setpoint if phase specifies one
+    if (current.temperature_target &gt; 0.0f) {
+        boilerController_.setTargetTemp(current.temperature_target);
+    }
+
+    // 7. Update shot state for recording and stop condition evaluation
+    shotState_.shot_elapsed_ms = shot_elapsed;
+    shotState_.phase_elapsed_ms = phase_elapsed;
+    shotState_.pressure_bar = sensors.pressure_bar;
+    shotState_.flow_ml_s = sensors.flow_ml_s;
+    shotState_.temperature_c = sensors.temperature_c;
+    shotState_.weight_g = sensors.scale_weight_g;
+    shotState_.water_pumped_ml += sensors.flow_ml_s * 0.01f;  // ~10ms tick
+}</code></pre>
+
+        <!-- ============================================================ -->
+        <!-- 11.6 PROFILE STORAGE -->
+        <!-- ============================================================ -->
+        <h3 id="profile-storage">Profile Storage</h3>
+
+        <p>Profiles are stored as human-readable JSON files on the LittleFS filesystem partition of the ESP32-S3 flash. This provides several advantages over the legacy EEPROM binary blob approach:</p>
+
+        <ul>
+          <li><strong>JSON in LittleFS</strong> &mdash; not binary blobs. Human-readable and editable.</li>
+          <li><strong>Validated on load</strong> against a JSON Schema (see ICD-05). Invalid profiles are rejected with clear error messages.</li>
+          <li><strong>Up to 20 profiles</strong> stored simultaneously. LittleFS has significantly more space than the legacy EEPROM approach.</li>
+          <li><strong>Export/import via web UI</strong> &mdash; profiles can be downloaded as JSON files and shared with other users.</li>
+          <li><strong>Default profiles shipped with firmware</strong> &mdash; includes Classic 9 Bar, Turbo, Blooming, and other common recipes.</li>
+        </ul>
+
+        <pre><code>// Profile filesystem layout in LittleFS
+/profiles/
+├── 00_classic_9bar.json        // Default: Classic 9 Bar
+├── 01_turbo.json               // Default: Turbo shot
+├── 02_blooming.json            // Default: Blooming espresso
+├── 03_user_profile.json        // User-created
+├── ...
+├── schema.json                 // JSON Schema for validation (ICD-05)
+└── active.txt                  // Contains index of active profile (e.g., "0")</code></pre>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Parameter</th><th>Value</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Storage format</strong></td>
+                <td>JSON</td>
+                <td>Human-readable, schema-validated, portable</td>
+              </tr>
+              <tr>
+                <td><strong>Filesystem</strong></td>
+                <td>LittleFS</td>
+                <td>Wear-leveled flash filesystem, power-loss safe</td>
+              </tr>
+              <tr>
+                <td><strong>Max profiles</strong></td>
+                <td>20</td>
+                <td>Software limit, not storage-constrained</td>
+              </tr>
+              <tr>
+                <td><strong>Max phases per profile</strong></td>
+                <td>10</td>
+                <td>Validated on load</td>
+              </tr>
+              <tr>
+                <td><strong>Max name length</strong></td>
+                <td>32 characters</td>
+                <td>UTF-8, displayed on TFT and web UI</td>
+              </tr>
+              <tr>
+                <td><strong>Validation</strong></td>
+                <td>JSON Schema (ICD-05)</td>
+                <td>Invalid profiles rejected with error message</td>
+              </tr>
+              <tr>
+                <td><strong>Export/Import</strong></td>
+                <td>REST API + Web UI</td>
+                <td>Download/upload via <code>/api/profiles</code> endpoint</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Previous and next pages">
+        <a href="software.html" class="prev-page">
+          <span class="material-symbols-rounded">arrow_back</span>
+          Software Architecture
+        </a>
+        <a href="data-model.html" class="next-page">
+          Data Model
+          <span class="material-symbols-rounded">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML page covers Sections 10 and 11 of the design document. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

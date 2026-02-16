@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="active">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Open Espresso Design Document</h1>
+      <p class="subtitle">Target Machine: Gaggia Classic (Pre-2015, Original Model)</p>
+      <div class="doc-meta">
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+        <span class="tag tag-green">MIT License</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- PURPOSE, SCOPE & OBJECTIVE -->
+      <!-- ================================================================ -->
+      <section class="section" id="purpose">
+        <h2>Purpose, Scope &amp; Objective</h2>
+        <p><strong>Purpose:</strong> This document specifies the design and requirements for the Open Espresso firmware, serving as the primary reference for firmware contributors, hardware builders, and web app developers.</p>
+        <p><strong>Scope:</strong> This document analyzes the Gaggiuino project's architecture as prior art, identifies lessons learned, and specifies a clean-room firmware design targeting a single machine — the Gaggia Classic (pre-2015, non-Pro model). Hardware and display choices are evaluated but left open for final selection.</p>
+        <p><strong>Project Objective:</strong> Provide an open-source (MIT licensed), single-MCU firmware for the Gaggia Classic that provides PID temperature control, pressure/flow profiling, a modern web interface, and safety parity with the stock machine — all buildable by a hobbyist with basic soldering skills.</p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- NOTATION -->
+      <!-- ================================================================ -->
+      <section class="section" id="notation">
+        <h2>Notation</h2>
+        <p>This document uses the following design languages and conventions:</p>
+        <ul>
+          <li><strong>SVG diagrams</strong> — architecture, wiring, enclosure, and state machine views</li>
+          <li><strong>C++ code snippets</strong> — interface definitions, safety constants, and algorithm pseudocode</li>
+          <li><strong>JSON / JSON Schema</strong> — data model and profile format specifications</li>
+          <li><strong>Natural-language prose</strong> — rationale, requirements, and analysis</li>
+          <li><strong>Tables</strong> — requirements, FMEA, test plan, BOM, and pin assignments</li>
+        </ul>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- OPERATIONAL CONCEPT -->
+      <!-- ================================================================ -->
+      <section class="section" id="operational-concept">
+        <h2>Operational Concept (Day-in-the-Life)</h2>
+        <ol>
+          <li>User turns on the Gaggia Classic (mains switch). PSU powers the ESP32.</li>
+          <li>Firmware boots in &lt; 5 seconds. TFT shows temperature, heating progress.</li>
+          <li>PID heats boiler to brew setpoint (93 &deg;C default). WiFi connects asynchronously.</li>
+          <li>TFT shows "Ready." User selects a profile (or uses the last active one).</li>
+          <li>User loads portafilter, places cup on scale (BLE connects automatically).</li>
+          <li>User flips brew switch. Shot starts. TFT shows live pressure/flow graph.</li>
+          <li>Profile engine runs phases: pre-infusion &rarr; ramp &rarr; hold.</li>
+          <li>Shot stops automatically on weight target (36 g). Pump off, solenoid opens.</li>
+          <li>User removes cup. System returns to IDLE.</li>
+          <li>Optional: user opens web app on phone to review shot data, tweak profile.</li>
+          <li>After 5 min idle, display dims. Machine stays warm (PID still active).</li>
+          <li>User turns off mains switch. All outputs safe (no power = no risk).</li>
+        </ol>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- STAKEHOLDER CONCERNS -->
+      <!-- ================================================================ -->
+      <section class="section" id="stakeholders">
+        <h2>Stakeholder Concerns and Document Map</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Stakeholder</th>
+                <th>Primary Concerns</th>
+                <th>Relevant Sections</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Daily user</strong></td>
+                <td>Reliable operation, clear display, fast workflow</td>
+                <td><a href="software.html#section-8">8 (UI)</a>, <a href="safety.html#section-10">10 (safety)</a>, <a href="requirements.html#section-16">16 (usability reqs)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Profile creator</strong></td>
+                <td>Profile format, phase behavior, stop conditions</td>
+                <td><a href="safety.html#section-11">11 (profile engine)</a>, <a href="interfaces.html#icd-05">20 ICD-05 (schema)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Firmware contributor</strong></td>
+                <td>Module boundaries, task architecture, build targets, testing</td>
+                <td><a href="software.html#section-9">9 (SW arch)</a>, <a href="requirements.html#section-16">16 (reqs)</a>, <a href="requirements.html#section-18">18 (test plan)</a>, <a href="interfaces.html#icd-02">20 ICD-02/03/04</a></td>
+              </tr>
+              <tr>
+                <td><strong>Web app contributor</strong></td>
+                <td>REST API, WebSocket protocol, auth model</td>
+                <td><a href="interfaces.html#icd-01">20 ICD-01 (API)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Hardware builder</strong></td>
+                <td>BOM, pin assignments, wiring, safety, enclosure</td>
+                <td><a href="safety.html#section-10">10 (safety)</a>, <a href="hardware.html#section-13">13&ndash;15 (HW)</a>, <a href="interfaces.html#icd-07">20 ICD-07</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- USER CHARACTERISTICS -->
+      <!-- ================================================================ -->
+      <section class="section" id="user-characteristics">
+        <h2>User Characteristics</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>User Role</th>
+                <th>Description</th>
+                <th>Technical Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Daily user</strong></td>
+                <td>Makes espresso, switches profiles, monitors shots</td>
+                <td>Non-technical. Interacts via TFT display and web app only.</td>
+              </tr>
+              <tr>
+                <td><strong>Profile creator</strong></td>
+                <td>Designs and tunes shot profiles, adjusts PID parameters</td>
+                <td>Intermediate. Understands pressure, flow, temperature concepts. Can edit JSON.</td>
+              </tr>
+              <tr>
+                <td><strong>Firmware contributor</strong></td>
+                <td>Adds features, fixes bugs, writes drivers</td>
+                <td>Developer. Fluent in C/C++, FreeRTOS, embedded systems.</td>
+              </tr>
+              <tr>
+                <td><strong>Web app contributor</strong></td>
+                <td>Builds or modifies the web UI</td>
+                <td>Developer. Fluent in HTML/CSS/JS, WebSocket, REST APIs.</td>
+              </tr>
+              <tr>
+                <td><strong>Hardware builder</strong></td>
+                <td>Assembles the electronics, wires the machine, builds the enclosure</td>
+                <td>Maker/hobbyist. Comfortable with soldering, basic electrical work, 3D printing.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- GLOSSARY -->
+      <!-- ================================================================ -->
+      <section class="section" id="glossary">
+        <h2>Glossary</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Term</th>
+                <th>Definition</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ADS1115</strong></td>
+                <td>16-bit analog-to-digital converter (Texas Instruments), I2C interface, used to read the pressure transducer</td>
+              </tr>
+              <tr>
+                <td><strong>BLE</strong></td>
+                <td>Bluetooth Low Energy — wireless protocol used to communicate with external scales</td>
+              </tr>
+              <tr>
+                <td><strong>BSP</strong></td>
+                <td>British Standard Pipe — thread standard used in espresso machine plumbing fittings</td>
+              </tr>
+              <tr>
+                <td><strong>CST816</strong></td>
+                <td>Capacitive touch controller IC (Hynitron), I2C interface</td>
+              </tr>
+              <tr>
+                <td><strong>EMI</strong></td>
+                <td>Electromagnetic Interference — unwanted electrical noise generated by switching circuits</td>
+              </tr>
+              <tr>
+                <td><strong>FMEA</strong></td>
+                <td>Failure Mode and Effects Analysis — systematic method for evaluating failure scenarios</td>
+              </tr>
+              <tr>
+                <td><strong>FreeRTOS</strong></td>
+                <td>Real-Time Operating System used on ESP32 for multitasking with priority-based scheduling</td>
+              </tr>
+              <tr>
+                <td><strong>GPIO</strong></td>
+                <td>General Purpose Input/Output — digital pins on the microcontroller</td>
+              </tr>
+              <tr>
+                <td><strong>HAL</strong></td>
+                <td>Hardware Abstraction Layer — software interface that decouples logic from specific hardware</td>
+              </tr>
+              <tr>
+                <td><strong>ICD</strong></td>
+                <td>Interface Control Document — specification defining how two components communicate</td>
+              </tr>
+              <tr>
+                <td><strong>ILI9341</strong></td>
+                <td>TFT LCD controller IC (Ilitek), SPI interface, drives the 2.8" 320&times;240 display</td>
+              </tr>
+              <tr>
+                <td><strong>ISR</strong></td>
+                <td>Interrupt Service Routine — function called by hardware interrupt (e.g., zero-cross detection)</td>
+              </tr>
+              <tr>
+                <td><strong>LittleFS</strong></td>
+                <td>Lightweight filesystem for embedded flash storage (replaces SPIFFS on ESP32)</td>
+              </tr>
+              <tr>
+                <td><strong>LVGL</strong></td>
+                <td>Light and Versatile Graphics Library — open-source UI toolkit for embedded displays</td>
+              </tr>
+              <tr>
+                <td><strong>MAX31855</strong></td>
+                <td>Thermocouple-to-digital converter IC (Analog Devices), SPI interface, reads K-type thermocouples</td>
+              </tr>
+              <tr>
+                <td><strong>MISRA C</strong></td>
+                <td>Motor Industry Software Reliability Association — coding standard for safety-critical C code</td>
+              </tr>
+              <tr>
+                <td><strong>NAN</strong></td>
+                <td>IEEE 754 Not-a-Number. Used as a return value from sensor HAL methods to indicate a fault condition (e.g., <code>readCelsius()</code> returns NAN when the thermocouple is disconnected).</td>
+              </tr>
+              <tr>
+                <td><strong>NVS</strong></td>
+                <td>Non-Volatile Storage — ESP32's key-value store in flash, used for configuration persistence</td>
+              </tr>
+              <tr>
+                <td><strong>OPV</strong></td>
+                <td>Over-Pressure Valve — mechanical spring-loaded valve that limits maximum brew pressure (stock: ~12 bar). Adjusted via a set screw inside the valve body (flathead screwdriver; clockwise = higher pressure). Use a portafilter pressure gauge to verify. Recommended: adjust to ~9 bar.</td>
+              </tr>
+              <tr>
+                <td><strong>OTA</strong></td>
+                <td>Over-The-Air — firmware update mechanism via WiFi, without physical USB connection</td>
+              </tr>
+              <tr>
+                <td><strong>Phase profiling</strong></td>
+                <td>Technique of dividing an espresso shot into discrete phases (pre-infusion, ramp, hold, decline), each with its own pressure or flow target, transition curve, and stop conditions.</td>
+              </tr>
+              <tr>
+                <td><strong>PID</strong></td>
+                <td>Proportional-Integral-Derivative — control algorithm used for temperature and pressure regulation</td>
+              </tr>
+              <tr>
+                <td><strong>PSU</strong></td>
+                <td>Power Supply Unit — converts mains AC to low-voltage DC (5 V) for electronics</td>
+              </tr>
+              <tr>
+                <td><strong>RTOS</strong></td>
+                <td>Real-Time Operating System (see FreeRTOS)</td>
+              </tr>
+              <tr>
+                <td><strong>SIL</strong></td>
+                <td>Safety Integrity Level — IEC 61508 classification of safety function reliability (SIL 1&ndash;4)</td>
+              </tr>
+              <tr>
+                <td><strong>SPI</strong></td>
+                <td>Serial Peripheral Interface — high-speed synchronous serial bus for sensors and display</td>
+              </tr>
+              <tr>
+                <td><strong>SSR</strong></td>
+                <td>Solid-State Relay — semiconductor switch that controls the boiler heating element (no moving parts)</td>
+              </tr>
+              <tr>
+                <td><strong>Stop condition</strong></td>
+                <td>A threshold that triggers the end of a profile phase (phase-level) or the entire shot (global). Examples: time elapsed, pressure above/below, flow above/below, weight reached, volume pumped. Multiple stop conditions can be set; phase advances when ANY is met.</td>
+              </tr>
+              <tr>
+                <td><strong>Transition curve</strong></td>
+                <td>The mathematical function used to interpolate between a phase's start and end target values. Options: INSTANT (step), LINEAR, EASE_IN (quadratic acceleration), EASE_OUT (quadratic deceleration), EASE_IN_OUT (smoothstep). See algorithm spec in <a href="software.html#section-9">section 9</a>.</td>
+              </tr>
+              <tr>
+                <td><strong>Triac</strong></td>
+                <td>Bidirectional thyristor used in the AC dimmer to control pump power via phase-angle modulation</td>
+              </tr>
+              <tr>
+                <td><strong>TWDT</strong></td>
+                <td>Task Watchdog Timer — ESP32 hardware watchdog that resets the MCU if not fed periodically</td>
+              </tr>
+              <tr>
+                <td><strong>Zero-cross detection</strong></td>
+                <td>Circuit that detects when AC mains voltage crosses zero, used to synchronize triac firing</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- REFERENCES -->
+      <!-- ================================================================ -->
+      <section class="section" id="references">
+        <h2>References</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Document</th>
+                <th>Relevance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>R01</strong></td>
+                <td><a href="https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf">ESP32-S3 Technical Reference Manual</a></td>
+                <td>MCU capabilities, GPIO, SPI, I2C, watchdog, secure boot</td>
+              </tr>
+              <tr>
+                <td><strong>R02</strong></td>
+                <td><a href="https://www.analog.com/media/en/technical-documentation/data-sheets/MAX31855.pdf">MAX31855 Datasheet</a></td>
+                <td>Thermocouple interface IC, fault detection bits</td>
+              </tr>
+              <tr>
+                <td><strong>R03</strong></td>
+                <td><a href="https://www.ti.com/lit/ds/symlink/ads1115.pdf">ADS1115 Datasheet</a></td>
+                <td>16-bit ADC for pressure transducer</td>
+              </tr>
+              <tr>
+                <td><strong>R04</strong></td>
+                <td><a href="https://cdn-shop.adafruit.com/datasheets/ILI9341.pdf">ILI9341 Datasheet</a></td>
+                <td>TFT display controller, SPI protocol</td>
+              </tr>
+              <tr>
+                <td><strong>R05</strong></td>
+                <td><a href="https://docs.lvgl.io/9/">LVGL Documentation</a></td>
+                <td>Embedded UI framework</td>
+              </tr>
+              <tr>
+                <td><strong>R06</strong></td>
+                <td><a href="https://webstore.iec.ch/en/publication/61880">IEC 60335-1:2020</a></td>
+                <td>Household appliance safety — general requirements</td>
+              </tr>
+              <tr>
+                <td><strong>R07</strong></td>
+                <td><a href="https://webstore.iec.ch/en/publication/24667">IEC 60335-2-15:2016</a></td>
+                <td>Safety — appliances for heating liquids</td>
+              </tr>
+              <tr>
+                <td><strong>R08</strong></td>
+                <td><a href="https://webstore.iec.ch/en/publication/5515">IEC 61508:2010</a></td>
+                <td>Functional safety of E/E/PE systems</td>
+              </tr>
+              <tr>
+                <td><strong>R09</strong></td>
+                <td><a href="https://standards.ieee.org/standard/29148-2018.html">IEEE 29148:2018</a></td>
+                <td>Requirements engineering</td>
+              </tr>
+              <tr>
+                <td><strong>R10</strong></td>
+                <td><a href="https://github.com/Zer0-bit/gaggiuino">Gaggiuino Project</a></td>
+                <td>Prior art and inspiration. No code reused; this is a clean-room design.</td>
+              </tr>
+              <tr>
+                <td><strong>R11</strong></td>
+                <td><a href="https://www.freertos.org/a00106.html">FreeRTOS API Reference</a></td>
+                <td>RTOS task, queue, and timer APIs</td>
+              </tr>
+              <tr>
+                <td><strong>R12</strong></td>
+                <td><a href="https://github.com/me-no-dev/ESPAsyncWebServer">ESPAsyncWebServer</a></td>
+                <td>Async HTTP/WebSocket server library for ESP32</td>
+              </tr>
+              <tr>
+                <td><strong>R13</strong></td>
+                <td><a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/system/freertos_idf.html">ESP-IDF FreeRTOS SMP</a></td>
+                <td>ESP-IDF's modified FreeRTOS with dual-core (SMP) support</td>
+              </tr>
+              <tr>
+                <td><strong>R14</strong></td>
+                <td><a href="https://www.buydisplay.com/download/ic/DS-CST816S_DS_V1.3.pdf">CST816 Datasheet</a></td>
+                <td>Capacitive touch controller IC, I2C interface</td>
+              </tr>
+              <tr>
+                <td><strong>R15</strong></td>
+                <td><a href="https://standards.ieee.org/standard/1016-2009.html">IEEE 1016-2009</a></td>
+                <td>Software Design Descriptions</td>
+              </tr>
+              <tr>
+                <td><strong>R16</strong></td>
+                <td><a href="https://json-schema.org/draft/2020-12/json-schema-core">JSON Schema 2020-12</a></td>
+                <td>JSON Schema specification used for ICD-05 profile format</td>
+              </tr>
+              <tr>
+                <td><strong>R17</strong></td>
+                <td><a href="https://github.com/h2zero/NimBLE-Arduino">NimBLE-Arduino</a></td>
+                <td>Lightweight BLE stack for ESP32 (replaces Bluedroid)</td>
+              </tr>
+              <tr>
+                <td><strong>R18</strong></td>
+                <td><a href="https://comoricoffee.com/en/gaggia-classic-pro-circuit-diagram-en/">Comori Coffee — Gaggia Classic Pro Circuit Diagram</a></td>
+                <td>State-by-state circuit analysis: thermostat chain, dual indicator lamps, DPDT steam switch, solenoid interlock</td>
+              </tr>
+              <tr>
+                <td><strong>R19</strong></td>
+                <td>Gaggia Official Wiring Diagram (Drawing 17800009, dated 22/10/09)</td>
+                <td>Factory wiring schematic for Gaggia Classic 120 V. Thermal fuse, thermostat, switch, pump, and solenoid connections</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- TABLE OF CONTENTS -->
+      <!-- ================================================================ -->
+      <nav class="toc" id="toc">
+        <h2>Table of Contents</h2>
+
+        <p class="intro-paragraph"><strong>How to read this document:</strong> Sections 1&ndash;6 analyze the current (legacy) architecture. Sections 7&ndash;15 define the future state design (hardware, software, safety, UI). Section 16 contains formal requirements, section 17 is the FMEA, section 18 is the test plan. Section 19 is the standards gap analysis. Section 20 defines all interface contracts (APIs, HALs, schemas). Section 21 tracks decisions and open questions.</p>
+
+        <h3>Current State Analysis</h3>
+        <ol>
+          <li><a href="current-state.html#section-1">Current State: Architecture Overview</a></li>
+          <li><a href="current-state.html#section-2">Current State: Hardware Topology</a></li>
+          <li><a href="current-state.html#section-3">Current State: Software Architecture</a></li>
+          <li><a href="current-state.html#section-4">Current State: Communication Protocol</a></li>
+          <li><a href="current-state.html#section-5">Current State: Configuration &amp; EEPROM</a></li>
+          <li><a href="current-state.html#section-6">Current State: Known Issues</a></li>
+        </ol>
+
+        <h3>Hardware Design</h3>
+        <ol start="7">
+          <li><a href="hardware.html#section-7">Future State: Hardware Evaluation</a></li>
+          <li value="13"><a href="hardware.html#section-13">Gaggia Classic (Pre-2015) Machine-Specific Notes</a></li>
+          <li><a href="hardware.html#section-14">Hardware Inventory: Current vs New BOM</a></li>
+          <li><a href="hardware.html#section-15">Physical Design: External Electronics Enclosure</a></li>
+        </ol>
+
+        <h3>Software Design</h3>
+        <ol start="8">
+          <li><a href="software.html#section-8">Future State: Display &amp; UI Architecture</a></li>
+          <li><a href="software.html#section-9">Future State: Software Architecture</a></li>
+        </ol>
+
+        <h3>Safety &amp; Profiling</h3>
+        <ol start="10">
+          <li><a href="safety.html#section-10">Future State: Safety Architecture</a></li>
+          <li><a href="safety.html#section-11">Future State: Profile Engine</a></li>
+        </ol>
+
+        <h3>Data Model</h3>
+        <ol start="12">
+          <li><a href="data-model.html#section-12">Future State: Data Model</a></li>
+        </ol>
+
+        <h3>Requirements, Verification &amp; Standards</h3>
+        <ol start="16">
+          <li><a href="requirements.html#section-16">Requirements Specification</a></li>
+          <li><a href="requirements.html#section-17">Failure Mode and Effects Analysis (FMEA)</a></li>
+          <li><a href="requirements.html#section-18">Verification &amp; Test Plan</a></li>
+          <li><a href="requirements.html#section-19">Standards Review &amp; Gap Analysis</a></li>
+        </ol>
+
+        <h3>Interfaces &amp; APIs</h3>
+        <ol start="20">
+          <li><a href="interfaces.html#section-20">Interface Control Documents &amp; APIs</a></li>
+        </ol>
+
+        <h3>Decisions</h3>
+        <ol start="21">
+          <li><a href="decisions.html#section-21">Decisions &amp; Open Questions</a></li>
+        </ol>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- PAGE FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Page navigation">
+        <a href="current-state.html" class="next-page">
+          Next: Current State
+          <span class="material-symbols-rounded icon-sm" aria-hidden="true">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

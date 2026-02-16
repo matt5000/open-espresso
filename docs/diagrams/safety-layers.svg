@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" width="800" height="250">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; }
+  </style>
+
+  <defs>
+    <marker id="arrow-struct" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#64748b" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="250" fill="#f8fafc" rx="4"/>
+
+  <!-- Title -->
+  <text x="400" y="26" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="bold">Safety: Three-Layer Defense-in-Depth</text>
+
+  <!-- ======= Layer 1: SOFTWARE ======= -->
+  <rect x="20" y="45" width="240" height="190" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="140" y="70" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">Layer 1</text>
+  <text x="140" y="88" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">SOFTWARE</text>
+  <line x1="40" y1="96" x2="240" y2="96" stroke="#1e40af" stroke-width="1" opacity="0.3"/>
+
+  <text x="140" y="118" text-anchor="middle" fill="#1e40af" font-size="12">PID temperature control</text>
+  <text x="140" y="136" text-anchor="middle" fill="#1e40af" font-size="12">Software fault detection</text>
+  <text x="140" y="154" text-anchor="middle" fill="#1e40af" font-size="12">Over-temp / over-pressure</text>
+  <text x="140" y="172" text-anchor="middle" fill="#1e40af" font-size="12">Sensor timeout checks</text>
+  <text x="140" y="190" text-anchor="middle" fill="#1e40af" font-size="12">Control loop watchdog</text>
+
+  <rect x="35" y="202" width="210" height="24" rx="4" fill="white" stroke="#1e40af" stroke-width="1" opacity="0.8"/>
+  <text x="140" y="218" text-anchor="middle" fill="#1e40af" font-size="10" font-style="italic">Can be buggy. Catches most faults.</text>
+
+  <!-- Arrow between Layer 1 and 2 -->
+  <line x1="264" y1="140" x2="276" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-struct)"/>
+
+  <!-- ======= Layer 2: HARDWARE WATCHDOG ======= -->
+  <rect x="285" y="45" width="240" height="190" rx="8" fill="#fef3c7" stroke="#92400e" stroke-width="2"/>
+  <text x="405" y="70" text-anchor="middle" fill="#92400e" font-size="14" font-weight="bold">Layer 2</text>
+  <text x="405" y="88" text-anchor="middle" fill="#92400e" font-size="13" font-weight="bold">HARDWARE WATCHDOG</text>
+  <line x1="305" y1="96" x2="505" y2="96" stroke="#92400e" stroke-width="1" opacity="0.3"/>
+
+  <text x="405" y="118" text-anchor="middle" fill="#92400e" font-size="12">MCU hardware watchdog timer</text>
+  <text x="405" y="136" text-anchor="middle" fill="#92400e" font-size="12">Resets MCU if software hangs</text>
+  <text x="405" y="154" text-anchor="middle" fill="#92400e" font-size="12">GPIO pins reset to safe state</text>
+  <text x="405" y="172" text-anchor="middle" fill="#92400e" font-size="12">(SSR OFF on reset)</text>
+
+  <rect x="300" y="202" width="210" height="24" rx="4" fill="white" stroke="#92400e" stroke-width="1" opacity="0.8"/>
+  <text x="405" y="218" text-anchor="middle" fill="#92400e" font-size="10" font-style="italic">Can fail if MCU is bricked. Resets to safe GPIO state.</text>
+
+  <!-- Arrow between Layer 2 and 3 -->
+  <line x1="529" y1="140" x2="541" y2="140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-struct)"/>
+
+  <!-- ======= Layer 3: PASSIVE HARDWARE ======= -->
+  <rect x="550" y="45" width="230" height="190" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+  <text x="665" y="70" text-anchor="middle" fill="#065f46" font-size="14" font-weight="bold">Layer 3</text>
+  <text x="665" y="88" text-anchor="middle" fill="#065f46" font-size="13" font-weight="bold">PASSIVE HARDWARE</text>
+  <line x1="570" y1="96" x2="760" y2="96" stroke="#065f46" stroke-width="1" opacity="0.3"/>
+
+  <text x="665" y="118" text-anchor="middle" fill="#065f46" font-size="12">Thermal fuse (boiler)</text>
+  <text x="665" y="136" text-anchor="middle" fill="#065f46" font-size="12">Over-pressure valve (OPV)</text>
+  <text x="665" y="154" text-anchor="middle" fill="#065f46" font-size="12">Passive, physics-based</text>
+  <text x="665" y="172" text-anchor="middle" fill="#065f46" font-size="12">No electronics required</text>
+
+  <rect x="562" y="202" width="206" height="24" rx="4" fill="white" stroke="#065f46" stroke-width="1" opacity="0.8"/>
+  <text x="665" y="218" text-anchor="middle" fill="#065f46" font-size="10" font-style="italic">Works with NO software, NO power, NO MCU.</text>
+</svg>
