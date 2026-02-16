@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+    .title { font-size: 16px; font-weight: bold; fill: #0f172a; }
+    .label { font-size: 11px; fill: #64748b; }
+    .field { font-size: 13px; fill: #0f172a; }
+    .emphasis-text { font-size: 13px; fill: #1e40af; }
+  </style>
+  <rect width="800" height="520" fill="#f8fafc" rx="4"/>
+
+  <text x="400" y="30" text-anchor="middle" class="title">Profile Data Model (ICD-05)</text>
+
+  <!-- Root: Profile -->
+  <rect x="300" y="48" width="200" height="36" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="400" y="71" text-anchor="middle" class="emphasis-text" font-weight="bold">Profile</text>
+
+  <!-- Vertical trunk line from root -->
+  <line x1="400" y1="84" x2="400" y2="104" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="400" y1="104" x2="400" y2="470" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Branch 1: name -->
+  <line x1="400" y1="118" x2="440" y2="118" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="440" y="102" width="320" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="456" y="123" class="mono field">name</text>
+  <text x="510" y="123" class="field">: string (max 32 chars)</text>
+
+  <!-- Branch 2: phases -->
+  <line x1="400" y1="162" x2="440" y2="162" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="440" y="146" width="320" height="32" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="456" y="167" class="mono emphasis-text">phases</text>
+  <text x="510" y="167" class="emphasis-text">: Phase[] (1-10)</text>
+
+  <!-- Sub-trunk for phases -->
+  <line x1="600" y1="178" x2="600" y2="388" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Phase child 1: type -->
+  <line x1="600" y1="206" x2="636" y2="206" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="636" y="190" width="148" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="652" y="211" class="mono field">type</text>
+  <text x="694" y="211" class="label">PRESSURE | FLOW</text>
+
+  <!-- Phase child 2: target -->
+  <line x1="600" y1="248" x2="636" y2="248" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="636" y="232" width="148" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="652" y="253" class="mono field">target</text>
+  <text x="700" y="253" class="label">: Transition</text>
+
+  <!-- Transition detail box -->
+  <rect x="100" y="228" width="280" height="56" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="116" y="248" class="mono" fill="#5b21b6">Transition {</text>
+  <text x="128" y="268" class="mono" fill="#5b21b6">start, end, curve, duration_ms }</text>
+  <line x1="380" y1="252" x2="636" y2="248" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Phase child 3: restriction -->
+  <line x1="600" y1="292" x2="636" y2="292" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="636" y="276" width="148" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="652" y="297" class="mono field">restriction</text>
+  <text x="100" y="297" class="label" text-anchor="start">float (-1 = none)</text>
+  <line x1="200" y1="292" x2="636" y2="292" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Phase child 4: stop_conditions -->
+  <line x1="600" y1="336" x2="636" y2="336" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="636" y="320" width="148" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="652" y="341" class="mono field">stop_conditions</text>
+
+  <!-- Stop conditions detail box -->
+  <rect x="50" y="310" width="340" height="56" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="66" y="330" class="mono" fill="#5b21b6">time_ms, pressure_above/below,</text>
+  <text x="66" y="350" class="mono" fill="#5b21b6">flow_above/below, weight_g, water_pumped_ml</text>
+  <line x1="390" y1="338" x2="636" y2="336" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Phase child 5: temperature_target -->
+  <line x1="600" y1="380" x2="636" y2="380" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="636" y="364" width="148" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="652" y="385" class="mono field">temperature_target</text>
+
+  <!-- Branch 3: global_stop_conditions -->
+  <line x1="400" y1="430" x2="440" y2="430" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="440" y="414" width="320" height="32" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="456" y="435" class="mono field">global_stop_conditions</text>
+
+  <!-- Global stop conditions detail box -->
+  <rect x="50" y="450" width="340" height="36" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="66" y="474" class="mono" fill="#5b21b6">{ time_ms, weight_g, water_pumped_ml }</text>
+  <line x1="390" y1="468" x2="600" y2="446" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Bullet dots on branch points -->
+  <circle cx="400" cy="118" r="3" fill="#64748b"/>
+  <circle cx="400" cy="162" r="3" fill="#64748b"/>
+  <circle cx="400" cy="430" r="3" fill="#64748b"/>
+  <circle cx="600" cy="206" r="3" fill="#64748b"/>
+  <circle cx="600" cy="248" r="3" fill="#64748b"/>
+  <circle cx="600" cy="292" r="3" fill="#64748b"/>
+  <circle cx="600" cy="336" r="3" fill="#64748b"/>
+  <circle cx="600" cy="380" r="3" fill="#64748b"/>
+
+  <!-- Legend -->
+  <text x="16" y="506" class="label">Blue boxes = composite types | Purple boxes = field detail | Dashed lines = detail references</text>
+</svg>

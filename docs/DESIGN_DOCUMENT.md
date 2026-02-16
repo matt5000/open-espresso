@@ -11,7 +11,7 @@
 ### Notation
 
 This document uses the following design languages and conventions:
-- **ASCII diagrams** — architecture, wiring, and state machine views
+- **SVG diagrams** — architecture, wiring, enclosure, and state machine views (see `docs/diagrams/`)
 - **C++ code snippets** — interface definitions, safety constants, and algorithm pseudocode
 - **JSON / JSON Schema** — data model and profile format specifications
 - **Natural-language prose** — rationale, requirements, and analysis
@@ -112,6 +112,8 @@ This document uses the following design languages and conventions:
 | [R15] | [IEEE 1016-2009](https://standards.ieee.org/standard/1016-2009.html) | Software Design Descriptions |
 | [R16] | [JSON Schema 2020-12](https://json-schema.org/draft/2020-12/json-schema-core) | JSON Schema specification used for ICD-05 profile format |
 | [R17] | [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) | Lightweight BLE stack for ESP32 (replaces Bluedroid) |
+| [R18] | [Comori Coffee — Gaggia Classic Pro Circuit Diagram](https://comoricoffee.com/en/gaggia-classic-pro-circuit-diagram-en/) | State-by-state circuit analysis: thermostat chain, dual indicator lamps, DPDT steam switch, solenoid interlock |
+| [R19] | Gaggia Official Wiring Diagram (Drawing 17800009, dated 22/10/09) | Factory wiring schematic for Gaggia Classic 120V. Thermal fuse, thermostat, switch, pump, and solenoid connections |
 
 ---
 
@@ -147,21 +149,7 @@ This document uses the following design languages and conventions:
 
 The current Gaggiuino system uses a **dual-MCU architecture**:
 
-```
-┌─────────────────────┐         UART (115200)         ┌─────────────────────┐
-│     STM32F411CE     │◄──────────────────────────────►│  ESP32-S2/S3 (Lego) │
-│  "Blackpill" MCU    │                                │   UI + Networking    │
-│                     │                                │                     │
-│  - PID control      │                                │  - Nextion display   │
-│  - Sensor reading   │                                │  - BLE scales comm   │
-│  - Pump (dimmer)    │                                │  - EEPROM storage    │
-│  - Solenoid valve   │                                │  - Profile storage   │
-│  - Boiler SSR       │                                │  - Web OTA           │
-│  - Pressure sensor  │                                │                     │
-│  - Thermocouple     │                                │                     │
-│  - Flow sensor      │                                │                     │
-└─────────────────────┘                                └─────────────────────┘
-```
+![Dual-MCU Architecture: STM32 real-time control + ESP32 UI/networking connected via UART](diagrams/dual-mcu-architecture.svg)
 
 **Why dual MCU:** The STM32 handles deterministic real-time control (PID, zero-cross dimmer timing, sensor polling) while the ESP32 handles WiFi/BLE connectivity, display rendering, and persistent storage. This split exists because the original design predates the ESP32-S3 which can handle both roles.
 
@@ -203,58 +191,11 @@ The pump is driven by a **zero-cross detection + phase-angle dimming** circuit (
 
 ### STM32 Side (Real-Time Control)
 
-```
-Main Loop (gaggiuino.cpp)
-│
-├── sensorsRead()           # Poll all sensors via ADS1115
-│   ├── Temperature         # MAX31855 thermocouple
-│   ├── Pressure            # Analog transducer (0-12 bar)
-│   └── Flow                # Hall-effect pulse counter
-│
-├── lcdRefresh()            # Send sensor state to ESP32 via UART
-│
-├── systemHealthCheck()     # Monitor for faults (thermocouple, pressure)
-│   ├── Thermocouple fault detection
-│   └── Pressure sensor fault detection
-│
-└── State Machine:
-    ├── BREW_MODE_4 (espresso_profiling)
-    │   ├── PhaseProfiler    # Multi-phase profile engine
-    │   ├── PID (pressure)   # Pressure PID controller
-    │   ├── PID (flow)       # Flow PID controller
-    │   └── PredictiveWeight # Estimate weight without scales
-    │
-    ├── FLUSH_MODE (backflushing)
-    │
-    ├── DESCALE_MODE (descaling)
-    │
-    └── STEAM_MODE (steam control)
-        └── PID (temperature) for steam setpoint
-```
+![STM32 Software Architecture: main loop with sensorsRead, lcdRefresh, systemHealthCheck, and state machine](diagrams/stm32-sw-architecture.svg)
 
 ### ESP32 Side (UI + Connectivity)
 
-```
-Main Loop (esp_comms.cpp)
-│
-├── UART receive/transmit    # Communication with STM32
-│
-├── Display (Nextion)        # Touch display protocol
-│   ├── Page navigation
-│   ├── Profile editing UI
-│   └── Shot graph rendering
-│
-├── BLE Scales               # Bluetooth Low Energy
-│   ├── Acaia
-│   ├── Felicita
-│   ├── Decent
-│   └── Bookoo (multiple models)
-│
-├── EEPROM Management        # Persistent configuration
-│   └── eepromValues_t struct (entire config blob)
-│
-└── Web OTA                  # Over-the-air firmware update
-```
+![ESP32 Software Architecture: UART, display, BLE scales, EEPROM, and OTA](diagrams/esp32-sw-architecture.svg)
 
 ### PID Controllers
 
@@ -277,26 +218,7 @@ Notable: The "flow PID" operates as a **cascaded controller** — it computes a 
 
 The profile engine (`PhaseProfiler` class) implements a **multi-phase shot profile**:
 
-```
-Profile
-├── Phase 0: Pre-infusion (pressure or flow target)
-│   ├── Target transition (instant, linear, ease-in, ease-out, ease-in-out)
-│   ├── Stop conditions (time, pressure threshold, flow threshold, weight)
-│   └── Restriction (max flow or max pressure)
-│
-├── Phase 1: Soak (optional hold/dwell phase)
-│   └── Same structure as above
-│
-├── Phase 2: Ramp to extraction pressure
-│   └── Transition from soak pressure to brew pressure
-│
-├── Phase N: ... (variable number of phases)
-│
-└── Global Stop Conditions
-    ├── Total time limit
-    ├── Total weight limit
-    └── Total water pumped limit
-```
+![Profile Engine: multi-phase shot profile with phases, transitions, stop conditions, and global limits](diagrams/profile-engine-tree.svg)
 
 Each phase can be either `PHASE_TYPE_PRESSURE` or `PHASE_TYPE_FLOW`, with a target value that transitions according to a curve. Phases advance automatically when their stop conditions are met.
 
@@ -360,34 +282,7 @@ The entire system configuration is stored in a single flat struct (`eepromValues
 - ~200+ fields covering all settings
 
 Key sections:
-```
-eepromValues_t
-├── System settings
-│   ├── lcdSleep (display timeout)
-│   ├── warmupState (enable warmup mode)
-│   ├── brewDeltaState (temperature compensation during brew)
-│   └── scalesF1/F2 (scale calibration factors)
-│
-├── Boiler PID tuning
-│   ├── steamSetPoint, offsetTemp
-│   ├── hpwr, mainDivider, brewDivider (PID gains - obfuscated names)
-│   └── kProportional, kIntegral, kDerivative (newer named gains)
-│
-├── Profile settings (×5 profiles)
-│   ├── preinfusionState, preinfusionBar, preinfusionFlowState
-│   ├── soakState, soakTimePressure, soakTimeFlow, soakKeepPressure
-│   ├── hotWaterFlowState (for flow-profiled extraction)
-│   ├── preinfusionFlowVol, preinfusionFlowPressureTarget
-│   ├── tfProfileStart, tfProfileEnd, tfProfileHold, tfProfileSteep
-│   │   (temperature profiling at different shot phases)
-│   ├── profilingState (enable multi-phase profiling)
-│   ├── phases[] (array of phase configurations)
-│   └── globalStopConditions (time, weight, volume limits)
-│
-└── Versioning
-    ├── versionId (schema version for migration)
-    └── EEPROM_DATA_VERSION (compile-time version)
-```
+![eepromValues_t configuration structure: system settings, PID tuning, profile settings, and versioning](diagrams/eeprom-values-tree.svg)
 
 ### Profile Storage
 
@@ -444,27 +339,7 @@ These are architectural and code-quality issues identified through code review:
 
 ### Option A: Single MCU — ESP32-S3
 
-```
-┌─────────────────────────────────────────────┐
-│                ESP32-S3-WROOM-1              │
-│                                              │
-│  Core 0 (Real-Time)     Core 1 (App)        │
-│  ├── PID loop           ├── WiFi/BLE        │
-│  ├── Dimmer timing      ├── Display          │
-│  ├── Sensor polling     ├── Web server       │
-│  └── Safety watchdog    └── OTA updates      │
-│                                              │
-│  Peripherals:                                │
-│  ├── SPI: Thermocouple (MAX31855)            │
-│  ├── I2C: ADC (ADS1115) for pressure        │
-│  ├── GPIO: Dimmer (zero-cross + triac)       │
-│  ├── GPIO: SSR (boiler)                      │
-│  ├── GPIO: Solenoid valve                    │
-│  ├── GPIO: Flow sensor (interrupt)           │
-│  ├── BLE: Scales communication               │
-│  └── SPI/I2C/Parallel: Display               │
-└─────────────────────────────────────────────┘
-```
+![ESP32-S3 Single-MCU Architecture: dual-core with peripherals](diagrams/esp32-s3-single-mcu.svg)
 
 **Pros:**
 - Single firmware image, no UART protocol, no version-skew issues
@@ -560,40 +435,7 @@ If evaluation reveals that WiFi/BLE activity causes unacceptable jitter in PID o
 
 **Status: DECIDED** — Start with the cheapest option that doesn't close any doors. Evaluate during prototyping whether to upgrade.
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                        ESP32-S3                                │
-│                                                                │
-│  ┌─────────────┐    SPI     ┌──────────────────────────────┐  │
-│  │ Control     │            │  ILI9341 2.8" TFT (320×240)  │  │
-│  │ (Core 0)    │            │  + Capacitive touch (CST816)  │  │
-│  └─────────────┘            │                               │  │
-│                              │  Shows during shot:           │  │
-│  ┌─────────────┐            │  ├── Temperature (current/set) │  │
-│  │ UI + Web    │───────────►│  ├── Pressure graph (live)     │  │
-│  │ (Core 1)    │            │  ├── Flow rate                 │  │
-│  └──────┬──────┘            │  ├── Shot timer                │  │
-│         │                    │  ├── Weight (if scales)        │  │
-│         │                    │  └── Phase indicator           │  │
-│         │  WiFi              │                               │  │
-│         │  HTTP + WebSocket  │  Shows at idle:                │  │
-│         │                    │  ├── Current temperature       │  │
-│         ▼                    │  ├── Ready/heating status      │  │
-│  ┌─────────────┐            │  └── Active profile name       │  │
-│  │  Web App    │            └──────────────────────────────┘  │
-│  │  (LittleFS) │                                               │
-│  └─────────────┘                                               │
-│         │                                                      │
-│         ▼                                                      │
-│  Phone / Tablet / Laptop (any browser on home WiFi)            │
-│  ├── Profile editor (create, modify, import/export)            │
-│  ├── Shot history with detailed graphs                         │
-│  ├── PID tuning interface                                      │
-│  ├── System settings (WiFi, scales, display)                   │
-│  ├── Real-time shot monitoring (WebSocket)                     │
-│  └── OTA firmware update                                       │
-└───────────────────────────────────────────────────────────────┘
-```
+![Display and UI Architecture: ESP32-S3 with TFT display and web app via WiFi](diagrams/display-ui-architecture.svg)
 
 ### Why This Approach
 
@@ -719,115 +561,17 @@ After living with the prototype, these are the questions and corresponding upgra
 
 ### Task Architecture
 
-```
-┌─────────────────────────── ESP32-S3 ───────────────────────────┐
-│                                                                 │
-│  Core 0 (Real-Time, pinned)          Core 1 (Application)      │
-│  ┌─────────────────────┐             ┌──────────────────────┐  │
-│  │  ControlTask (5ms)  │             │  UITask (50ms)       │  │
-│  │  ├── Read sensors   │  Queues     │  ├── Web server      │  │
-│  │  ├── Run PID        │◄──────────► │  ├── WebSocket push  │  │
-│  │  ├── Set pump power │             │  ├── Display update   │  │
-│  │  ├── Set SSR        │             │  └── Profile editor   │  │
-│  │  └── Safety checks  │             └──────────────────────┘  │
-│  └─────────────────────┘                                        │
-│  ┌─────────────────────┐             ┌──────────────────────┐  │
-│  │  DimmerISR          │             │  BLETask             │  │
-│  │  (hardware timer)   │             │  ├── Scale reading    │  │
-│  │  └── Zero-cross +   │             │  └── Heartbeat mgmt  │  │
-│  │      phase-angle    │             └──────────────────────┘  │
-│  └─────────────────────┘                                        │
-│  ┌─────────────────────┐             ┌──────────────────────┐  │
-│  │  WatchdogTask       │             │  PersistenceTask     │  │
-│  │  └── Feed or reset  │             │  ├── Config save     │  │
-│  └─────────────────────┘             │  └── Shot logging    │  │
-│                                       └──────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
+![FreeRTOS Task Architecture: Core 0 real-time tasks and Core 1 application tasks](diagrams/task-architecture.svg)
 
 ### Module Decomposition
 
 **PlatformIO note:** PlatformIO compiles `src/` recursively by default when using the Arduino framework, but some configurations require explicit `build_src_filter`. If subdirectories are not compiled, add to `platformio.ini`: `build_src_filter = +<*> +<**/*.cpp>`. Alternatively, organize modules as PlatformIO library components under `lib/` (each with its own `library.json`).
 
-```
-src/
-├── main.cpp                    # App entry, task creation
-├── control/
-│   ├── control_task.h/cpp      # Main real-time control loop
-│   ├── pid.h/cpp               # PID controller (pure math, testable)
-│   ├── dimmer.h/cpp            # Zero-cross phase-angle dimmer driver
-│   ├── boiler.h/cpp            # SSR control with safety limits
-│   └── state_machine.h/cpp     # Brew/steam/idle/flush states
-│
-├── sensors/
-│   ├── sensor_manager.h/cpp    # Unified sensor reading interface
-│   ├── thermocouple.h/cpp      # MAX31855 driver
-│   ├── pressure.h/cpp          # ADS1115-based pressure transducer
-│   └── flow.h/cpp              # Hall-effect flow sensor (ISR-based)
-│
-├── profile/
-│   ├── profile.h/cpp           # Profile data structures
-│   ├── phase_profiler.h/cpp    # Phase engine (pure logic, testable)
-│   └── predictive_weight.h/cpp # Weight estimation (pure logic, testable)
-│
-├── ui/
-│   ├── display.h/cpp           # Small status display driver (OLED/TFT)
-│   ├── web_server.h/cpp        # HTTP server + static file serving
-│   └── websocket.h/cpp         # Real-time shot data streaming
-│
-├── connectivity/
-│   ├── ble_scales.h/cpp        # BLE scale abstraction
-│   ├── wifi_manager.h/cpp      # WiFi connection management
-│   └── ota.h/cpp               # Over-the-air firmware updates
-│
-├── config/
-│   ├── config.h/cpp            # Configuration schema (typed, validated)
-│   ├── storage.h/cpp           # NVS/LittleFS persistence
-│   └── migration.h/cpp         # Config version migration
-│
-├── safety/
-│   ├── watchdog.h/cpp          # Hardware watchdog management
-│   ├── fault_handler.h/cpp     # Centralized fault detection/response
-│   └── safety_limits.h         # Compile-time safety constants
-│
-└── test/
-    ├── test_pid.cpp
-    ├── test_phase_profiler.cpp
-    ├── test_predictive_weight.cpp
-    ├── test_config_migration.cpp
-    └── test_state_machine.cpp
-```
+![Module Decomposition: src/ directory with control, sensors, profile, ui, connectivity, config, safety, and test modules](diagrams/module-decomposition.svg)
 
 ### Inter-Task Communication
 
-```
-                    ┌────────────────────┐
-                    │   SensorReading    │
-                    │   {temp, pressure, │
-ControlTask ──────► │    flow, weight}   │ ──────► UITask
-  produces          └────────────────────┘         consumes
-                                                   (for display/WS)
-
-                    ┌────────────────────┐
-                    │   ShotDataPoint    │
-                    │   {time, pressure, │
-ControlTask ──────► │    flow, weight,   │ ──────► UITask
-  produces          │    target_p, ...}  │         consumes
-                    └────────────────────┘         (for shot graph)
-
-                    ┌────────────────────┐
-                    │   ConfigUpdate     │
-                    │   {new profile,    │
-UITask ────────────►│    new settings}   │ ──────► ControlTask
-  produces          └────────────────────┘         consumes
-                                                   (applies changes)
-
-                    ┌────────────────────┐
-                    │   ScaleReading     │
-                    │   {weight, stable} │
-BLETask ───────────►└────────────────────┘ ──────► ControlTask
-  produces                                         consumes
-```
+![Inter-Task Communication Queues: SensorReading, ShotDataPoint, ConfigUpdate, and ScaleReading](diagrams/inter-task-queues.svg)
 
 All communication uses **FreeRTOS queues** with bounded sizes. If a queue is full, the producer drops the oldest item (for telemetry) or blocks briefly (for commands). No shared mutable state between tasks.
 
@@ -835,26 +579,7 @@ All communication uses **FreeRTOS queues** with bounded sizes. If a queue is ful
 
 ### System Context Diagram
 
-```
-                            ┌───────────────────────────────────┐
-                            │     Open Espresso Firmware        │
-     ┌──────────┐           │         (ESP32-S3)                │          ┌──────────────┐
-     │  Gaggia  │           │                                   │          │   Browser /  │
-     │  Classic │◄──sensors─┤  Sensors ──► Control ──► Safety   │──WiFi───►│   Phone      │
-     │ (Machine)│──actuators┤               │   │               │  REST/WS │   (Web App)  │
-     │          │           │  Display ◄────┘   └──► Persist    │          └──────────────┘
-     └────┬─────┘           │                                   │
-          │                 │  BLE ◄─────────────────────────── │ ◄──BLE──── ┌────────────┐
-     Mains AC               │                                   │            │ BLE Scales │
-     (230V/120V)            └───────────────────────────────────┘            └────────────┘
-                                          │
-                              ┌───────────┴───────────┐
-                              │  External Libraries   │
-                              │  FreeRTOS, LVGL,      │
-                              │  ESPAsyncWebServer,   │
-                              │  NimBLE, LittleFS     │
-                              └───────────────────────┘
-```
+![System Context Diagram: Gaggia Classic, ESP32-S3 firmware, web app, and BLE scales](diagrams/system-context.svg)
 
 Data flows crossing the system boundary:
 - **Sensors (in):** Temperature (SPI/MAX31855), pressure (I2C/ADS1115), flow (GPIO/ISR)
@@ -1086,13 +811,7 @@ Output: triac firing delay in microseconds after zero-cross
 
 The safety architecture uses **three independent layers**. Any single layer failing cannot cause a hazard:
 
-```
-Layer 1: SOFTWARE         Layer 2: HARDWARE WATCHDOG     Layer 3: PASSIVE HARDWARE
-(PID, fault detection)    (MCU resets if software hangs)  (thermal fuse, OPV)
-                                                          Works with NO software,
-Can be buggy.             Can fail if MCU is bricked.     NO power to MCU, NO
-Catches most faults.      Resets to safe GPIO state.      electronics at all.
-```
+![Three-Layer Safety Architecture: Software PID → Hardware Watchdog → Passive Thermal Fuse](diagrams/safety-layers.svg)
 
 ### Layer 3: Hardware Thermal Fuse (MANDATORY)
 
@@ -1100,18 +819,7 @@ Catches most faults.      Resets to safe GPIO state.      electronics at all.
 
 When the stock Gaggia Classic bimetal thermostats are removed (required for PID control), the only hardware over-temperature protection is gone. A thermal fuse must replace it.
 
-```
-Mains ──── Thermal Fuse (190°C) ──── SSR ──── Boiler Element
-            │
-            │  Wired in SERIES with the boiler heating element.
-            │  Opens permanently if boiler surface exceeds 190°C.
-            │  Works even if: MCU is dead, software has a bug,
-            │  SSR is stuck on, thermocouple is disconnected,
-            │  power supply has failed, all electronics are destroyed.
-            │
-            └── Install in the upper thermostat slot on the boiler
-                (the slot vacated by the steam thermostat).
-```
+![Thermal Fuse Wiring: wired in series with boiler element as passive safety layer](diagrams/thermal-fuse-wiring.svg)
 
 | Spec | Value |
 |------|-------|
@@ -1125,14 +833,7 @@ Mains ──── Thermal Fuse (190°C) ──── SSR ──── Boiler El
 
 ### Layer 2: Watchdog Timer
 
-```
-Hardware Watchdog (ESP32 TWDT)
-├── ControlTask must feed watchdog every 100ms
-├── Timeout: 500ms (tolerates up to 5 missed feeds before reset,
-│   providing margin for transient delays without reducing safety)
-├── If not fed → hardware reset → all outputs go to safe state
-└── GPIO outputs default to OFF on reset (SSR off, pump off, solenoid off)
-```
+![Hardware Watchdog Configuration: ESP32 TWDT with 100ms feed interval and 500ms timeout](diagrams/watchdog-config.svg)
 
 ### Layer 1: Software Fault Detection & Response
 
@@ -1184,49 +885,7 @@ The Gaggia Classic chassis is a **Class I appliance** — it relies on protectiv
 
 All eight states from the `MachineState` enum (ICD-02), with labeled transitions:
 
-```
-                         ┌─────────────────────────────────────────────┐
-                         │           FAULT                             │
-                         │  All outputs OFF. Notification shown.       │◄─── Any state on:
-                         │  Exit: power cycle OR explicit reset cmd    │     - Thermocouple fault
-                         └─────────────────────────────────────────────┘     - Over-temp (>170°C)
-                              ▲                                              - Over-pressure (>13bar)
-                              │ fault                                        - Sensor timeout (>200ms)
-                              │ detected                                     - Stuck SSR detected
-   ┌───────────┐         ┌────┴──────┐                                       - Continuous heat >20min
-   │  HEATING  │────────►│  READY    │                                       - Control loop <10Hz
-   │           │  temp ≥ │           │
-   │ SSR=PID   │  set-1°C│ SSR=PID   │
-   └───────────┘         └─────┬─────┘
-        ▲                      │
-        │ temp < set-2°C       │ (transitions from READY)
-        │ (hysteresis)         ├───────────────────────────────────────┐
-   ┌────┴──────┐               │                          │           │
-   │   IDLE    │◄──────────────┤                          ▼           ▼
-   │           │  brew switch  │ brew switch ON       ┌────────┐  ┌────────────┐
-   │ SSR=PID   │  OFF + done   │ + temp ≥ set-2°C    │ STEAM  │  │ DESCALING  │
-   │ (heating) │               │                      │        │  │            │
-   └───────────┘          ┌────▼──────┐               │ SSR=PID│  │ Pump cycle │
-        ▲                 │ BREWING   │               │ (steam │  │ per descale│
-        │                 │           │               │  set)  │  │ program    │
-        │ shot done /     │ Profile   │               └────┬───┘  └─────┬──────┘
-        │ switch OFF      │ engine    │                    │            │
-        │                 │ active    │  steam switch OFF  │ done       │
-        │                 └─────┬─────┘                    │            │
-        │                       │                          │            │
-        │ timeout (3s)    ┌─────▼─────┐                    │            │
-        ├─────────────────┤   DONE    │◄───────────────────┘            │
-        │                 │           │◄────────────────────────────────┘
-        │                 │ Show shot │
-        │                 │ summary   │
-   ┌────┴──────┐         └───────────┘
-   │ FLUSHING  │
-   │           │◄── flush button / backflush command
-   │ Pump ON,  │
-   │ solenoid  │
-   │ cycle     │
-   └───────────┘
-```
+![Safety State Machine: IDLE, HEATING, READY, BREWING, DONE, STEAM, FLUSHING, DESCALING, FAULT states with transitions](diagrams/safety-state-machine.svg)
 
 **Transition guards:**
 
@@ -1271,33 +930,7 @@ The profile engine is one of the strongest parts of the current design. The rewr
 
 ### Profile Data Model
 
-```
-Profile
-├── name: string (max 32 chars)
-├── phases: Phase[] (1-10 phases)
-│   ├── type: PRESSURE | FLOW
-│   ├── target: Transition
-│   │   ├── start: float (optional, default 0, -1 = "from current")
-│   │   ├── end: float
-│   │   ├── curve: INSTANT | LINEAR | EASE_IN | EASE_OUT | EASE_IN_OUT
-│   │   └── duration_ms: uint32
-│   ├── restriction: float (-1 = none)
-│   │   (max flow if type=PRESSURE, max pressure if type=FLOW)
-│   ├── stop_conditions: StopConditions
-│   │   ├── time_ms: int32 (-1 = disabled)
-│   │   ├── pressure_above: float (-1 = disabled)
-│   │   ├── pressure_below: float (-1 = disabled)
-│   │   ├── flow_above: float (-1 = disabled)
-│   │   ├── flow_below: float (-1 = disabled)
-│   │   ├── weight_g: float (-1 = disabled)
-│   │   └── water_pumped_ml: float (-1 = disabled)
-│   └── temperature_target: float (per-phase temperature)
-│
-└── global_stop_conditions: GlobalStopConditions
-    ├── time_ms: int32 (-1 = disabled)
-    ├── weight_g: float (-1 = disabled)
-    └── water_pumped_ml: float (-1 = disabled)
-```
+![Profile Data Model: phases with transitions, stop conditions, restrictions, and global stop conditions](diagrams/profile-data-model.svg)
 
 ### Example Profile: Classic 9-Bar Shot
 
@@ -1347,65 +980,23 @@ Profile
 
 ### Configuration (replaces eepromValues_t)
 
-```
-SystemConfig                          (stored in NVS)
-├── wifi_ssid: string
-├── wifi_password: string
-├── ble_scales_address: string
-├── display_brightness: uint8 (0-100)
-├── display_timeout_s: uint16
-├── active_profile_index: uint8
-│
-├── boiler: BoilerConfig
-│   ├── brew_temp_c: float (default: 93.0)
-│   ├── steam_temp_c: float (default: 155.0)
-│   ├── offset_temp_c: float (default: 0.0)
-│   ├── pid_kp: float
-│   ├── pid_ki: float
-│   └── pid_kd: float
-│
-├── pump: PumpConfig
-│   ├── pressure_pid_kp: float
-│   ├── pressure_pid_ki: float
-│   ├── pressure_pid_kd: float
-│   ├── flow_pid_kp: float
-│   ├── flow_pid_ki: float
-│   └── flow_pid_kd: float
-│
-├── scales: ScalesConfig
-│   ├── calibration_factor_1: float
-│   ├── calibration_factor_2: float
-│   └── predictive_enabled: bool
-│
-└── version: uint32 (schema version for migration)
-```
+![SystemConfig data model: WiFi settings, boiler PID tuning, pump PID tuning, scales calibration, display settings, and schema version — stored in NVS](diagrams/system-config-model.svg)
 
 ### Shot Log
 
-```
-ShotRecord                            (stored in LittleFS as JSON)
-├── timestamp: uint32 (epoch seconds)
-├── profile_name: string
-├── duration_ms: uint32
-├── total_weight_g: float
-├── total_volume_ml: float
-├── avg_temperature_c: float
-├── avg_pressure_bar: float
-├── peak_pressure_bar: float
-├── datapoints: ShotDataPoint[]       (sampled every 100ms)
-│   ├── time_ms: uint32
-│   ├── temperature_c: float
-│   ├── pressure_bar: float
-│   ├── flow_ml_s: float
-│   ├── weight_g: float
-│   ├── target_pressure: float
-│   └── target_flow: float
-└── notes: string (user annotation)
-```
+![ShotRecord data model: timestamp, profile name, duration, total weight/volume, averages, peak pressure, datapoints array sampled every 100ms, and user notes — stored in LittleFS as JSON](diagrams/shot-record-model.svg)
 
 ---
 
 ## 13. Gaggia Classic (Pre-2015) Machine-Specific Notes
+
+### Electrical Diagrams
+
+Three SVG diagrams document the complete electrical architecture. Open in any browser or view directly on GitHub. These diagrams were verified against the official Gaggia wiring diagram [R19] and the Comori Coffee circuit analysis [R18]:
+
+1. **[Stock Wiring Schematic](diagrams/stock-wiring.svg)** — The unmodified factory electrical circuit: mains path, thermostat chain, brew/steam switching, pump, solenoid, and safety components. Based on [R18] and [R19].
+2. **[Modified Wiring Schematic](diagrams/modified-wiring.svg)** — The complete circuit after all Open Espresso modifications: SSR, dimmer, sensors, PSU, ESP32, and external enclosure layout. Shows which components are new, removed, or retained.
+3. **[Wiring Changeover Guide](diagrams/wiring-changeover.svg)** — Step-by-step modification sequence from stock to modified, with before/after circuit snippets and verification checkpoints.
 
 ### Machine Specifications
 
@@ -1548,62 +1139,13 @@ The current Gaggiuino design places the PCB inside the machine, either loose or 
 
 Mount all sensitive electronics in a sealed enclosure attached to the **rear panel** of the Gaggia Classic, with only sensor and power cables passing through the chassis.
 
-```
-         ┌──────────────────────────────────────────────┐
-         │              GAGGIA CLASSIC                   │
-         │            (rear view, 230mm wide)            │
-         │                                               │
-         │   ┌─────┐                                     │
-         │   │vent │          ┌───────┐                  │
-         │   │holes│          │ power │  (IEC C14 inlet) │
-         │   └─────┘          │ inlet │                  │
-         │                    └───────┘                  │
-         │                                               │
-         │   ══════════════════════════════  (bottom)     │
-         └──────────────────────────────────────────────┘
-                            │
-               Cable glands │ (PG7/PG9)
-               pass through │ rear panel
-                            │
-         ┌──────────────────┴───────────────────────────┐
-         │          EXTERNAL ENCLOSURE                   │
-         │          (~120mm × 80mm × 40mm)               │
-         │                                               │
-         │   ┌───────────────────────────────────────┐   │
-         │   │  ESP32-S3          MAX31855   ADS1115 │   │
-         │   │  ┌────────┐      ┌───┐       ┌───┐   │   │
-         │   │  │        │      │   │       │   │   │   │
-         │   │  └────────┘      └───┘       └───┘   │   │
-         │   │                                       │   │
-         │   │  Signal conditioning / connectors      │   │
-         │   └───────────────────────────────────────┘   │
-         │                                               │
-         │   ┌───────────────────────────────────────┐   │
-         │   │  ILI9341 2.8" TFT                     │   │
-         │   │  (window cutout in enclosure lid)      │   │
-         │   └───────────────────────────────────────┘   │
-         │                                               │
-         └───────────────────────────────────────────────┘
-```
+![Rear panel mounting: Gaggia Classic rear view showing cable glands passing through to external enclosure with ESP32-S3, MAX31855, ADS1115, and ILI9341 TFT](diagrams/rear-panel-enclosure.svg)
 
 ### Cable Routing
 
 Seven cables pass through the rear panel via cable glands:
 
-```
-Inside Machine                    Cable Gland        External Enclosure
-─────────────────                 ───────────        ──────────────────
-
-Thermocouple (boiler) ──── 2-wire analog ─ PG7 ──── MAX31855 (SPI to ESP32 inside enclosure)
-Pressure transducer ────── 3-wire analog ── PG7 ──── ADS1115
-Flow sensor ────────────── 3-wire digital ─ PG7 ──── ESP32 GPIO
-SSR control ────────────── 2-wire logic ─── PG7 ──── ESP32 GPIO
-Dimmer control ─────────── 3-wire (ZC+gate+GND) ── PG7 ── ESP32 GPIO
-Solenoid relay (optional) ─ 2-wire logic ── PG7 ──── ESP32 GPIO
-5V DC power ────────────── 2-wire DC ───── PG7 ──── ESP32 + display
-
-Total: 7 cable glands (PG7 for individual cables, or fewer PG9 for bundled cables)
-```
+![Cable routing: 7 cables from inside machine through PG7 cable glands to external enclosure — thermocouple, pressure, flow, SSR, dimmer, solenoid, 5V DC](diagrams/cable-routing.svg)
 
 ### Mounting Options
 
@@ -1650,22 +1192,7 @@ Mount under the machine. Not recommended:
 
 The 2.8" TFT sits behind a window cutout in the enclosure lid:
 
-```
-┌─────────────────────────────────────────┐
-│           ENCLOSURE LID (top view)       │
-│                                          │
-│   ┌───────────────────────────────┐      │
-│   │                               │      │
-│   │     2.8" TFT visible area     │      │
-│   │       (approx 57mm × 43mm)    │      │
-│   │                               │      │
-│   └───────────────────────────────┘      │
-│    clear acrylic window + foam gasket    │
-│                                          │
-│   ○ USB-C access port (for flashing)     │
-│                                          │
-└─────────────────────────────────────────┘
-```
+![Enclosure lid: top view showing 2.8-inch TFT visible area with acrylic window, foam gasket, and USB-C access port](diagrams/enclosure-lid.svg)
 
 - The acrylic window is sealed with a thin foam gasket to keep moisture out
 - Touch works through thin acrylic/polycarbonate (capacitive touch, not resistive)
@@ -1673,60 +1200,13 @@ The 2.8" TFT sits behind a window cutout in the enclosure lid:
 
 ### Internal Layout
 
-```
-┌──────────────────────────────────────────────────────┐
-│  ENCLOSURE INTERIOR (lid removed, top view)           │
-│                                                       │
-│  ┌────────────────────────┐  ┌─────────┐  ┌───────┐ │
-│  │                        │  │ MAX31855│  │ADS1115│ │
-│  │     ESP32-S3 Dev       │  │ breakout│  │  ADC  │ │
-│  │     Board              │  │         │  │       │ │
-│  │     (e.g. DevKitC-1)   │  └─────────┘  └───────┘ │
-│  │                        │                          │
-│  └────────────────────────┘                          │
-│                                                       │
-│  ┌──────────────────────────────────────────────────┐│
-│  │         ILI9341 2.8" TFT (face-down toward lid) ││
-│  │         (FPC cable to ESP32 SPI)                 ││
-│  └──────────────────────────────────────────────────┘│
-│                                                       │
-│  ═══ ═══ ═══ ═══ ═══ ═══ ═══  (cable gland entries) │
-│  TC  PSI  FLW  SSR  DIM  SOL  5V                     │
-└──────────────────────────────────────────────────────┘
-```
+![Enclosure interior: lid removed top view showing ESP32-S3 dev board, MAX31855 breakout, ADS1115 ADC, ILI9341 TFT face-down, and 7 cable gland entries](diagrams/enclosure-interior.svg)
 
 ### Inside the Machine: What Remains
 
 With the electronics outside, the interior of the Gaggia Classic only has:
 
-```
-┌─────────────────────────────────────────────┐
-│          GAGGIA CLASSIC INTERIOR             │
-│          (top view, lid removed)             │
-│                                              │
-│  ┌────────┐                    ┌──────────┐ │
-│  │ Water  │                    │  Boiler   │ │
-│  │ Tank   │                    │           │ │
-│  │        │     ┌──────┐       │  TC here  │ │
-│  │        │     │ Pump │       │  (M4)     │ │
-│  └────────┘     │      │       └──────────┘ │
-│                  │ Flow │                     │
-│                  │sensor│    ┌──────────────┐│
-│                  │ here │    │  SSR         ││
-│                  └──────┘    │  (potted,    ││
-│                              │   moisture   ││
-│    ┌──────────┐              │   tolerant)  ││
-│    │ Dimmer   │              └──────────────┘│
-│    │ module   │                              │
-│    │ (near    │    ┌─────────┐               │
-│    │  pump    │    │Pressure │               │
-│    │  wiring) │    │transducr│               │
-│    └──────────┘    │(sealed) │               │
-│                    └─────────┘               │
-│                                              │
-│  ════ cables exit via rear panel glands ════ │
-└─────────────────────────────────────────────┘
-```
+![Gaggia Classic interior: top view with water tank, pump with flow sensor, boiler with thermocouple, SSR, dimmer module, and pressure transducer — cables exit via rear panel glands](diagrams/gaggia-interior.svg)
 
 **Key points:**
 - The SSR is potted/sealed — moisture tolerant. Mount it near the boiler wiring with thermal pad if needed.
@@ -1741,16 +1221,7 @@ With the electronics outside, the interior of the Gaggia Classic only has:
 
 Inside the machine, high-voltage AC wiring (mains, boiler, pump) and low-voltage signal wiring (sensor outputs, SSR/dimmer control) must be physically separated:
 
-```
-LEFT SIDE (high voltage)           RIGHT SIDE (low voltage signals)
-─────────────────────────          ──────────────────────────────
-Mains input                        Thermocouple 2-wire
-Boiler element leads               Pressure transducer 3-wire
-Pump motor leads                   Flow sensor 3-wire
-SSR output (switched mains)        SSR control (3.3V logic)
-Dimmer output (switched mains)     Dimmer ZC + gate (3.3V logic)
-                                   5V DC power cable
-```
+![HV/LV separation: left side high-voltage (mains, boiler, pump, SSR/dimmer output) physically separated from right side low-voltage signals (thermocouple, pressure, flow, control logic, 5V DC)](diagrams/hv-lv-separation.svg)
 
 Low-voltage signal cables should use **shielded or twisted-pair wire** where possible, and be bundled through separate cable glands from any AC wiring.
 
@@ -2217,58 +1688,7 @@ For this to work as a community project, contributors need to be able to work on
 
 ### Interface Map
 
-```
-                            ┌──────────────────────────────────┐
-                            │         COMMUNITY CONTRIBUTORS    │
-                            │                                   │
-                            │  ┌───────────┐  ┌─────────────┐ │
-                            │  │ Web App   │  │ iOS/Android │ │
-                            │  │ Developer │  │ App Dev     │ │
-                            │  └─────┬─────┘  └──────┬──────┘ │
-                            │        │               │         │
-                            └────────┼───────────────┼─────────┘
-                                     │               │
-                              ICD-01 │ REST + WS     │ ICD-01 (same API)
-                                     │               │
-┌─────────────────────────── ESP32-S3 Firmware ───────┴────────────────────┐
-│                                     │                                    │
-│                              ┌──────┴──────┐                             │
-│                              │  Web Server │                             │
-│                              │  (Core 1)   │                             │
-│                              └──────┬──────┘                             │
-│                                     │                                    │
-│                              ICD-02 │ Internal Event Bus                 │
-│                                     │ (FreeRTOS queues)                  │
-│                              ┌──────┴──────┐                             │
-│                              │  Control    │                             │
-│                              │  Task       │                             │
-│                              │  (Core 0)   │                             │
-│                              └──┬───┬───┬──┘                             │
-│                                 │   │   │                                │
-│        ┌────────────────────────┘   │   └──────────────────────┐         │
-│  ICD-03│ Sensor HAL          ICD-04│ Actuator HAL        ICD-05│ Profile │
-│        │                           │                           │ Format  │
-│  ┌─────┴──────┐             ┌──────┴──────┐            ┌──────┴───────┐ │
-│  │ Temp/Press │             │ SSR/Dimmer  │            │ JSON Schema  │ │
-│  │ Flow/Scale │             │ Solenoid    │            │ (profiles)   │ │
-│  └────────────┘             └─────────────┘            └──────────────┘ │
-│        │                           │                                     │
-│  ICD-06│ BLE Scales                │                                     │
-│        │                           │                                     │
-│  ┌─────┴──────┐                    │                                     │
-│  │ Scale      │                    │                                     │
-│  │ Drivers    │                    │                                     │
-│  └────────────┘                    │                                     │
-│                                    │                                     │
-└────────────────────────────────────┴─────────────────────────────────────┘
-                                     │
-                              ICD-07 │ Hardware Interface
-                                     │ (Pin assignments, voltage levels)
-                              ┌──────┴──────┐
-                              │  Physical   │
-                              │  Hardware   │
-                              └─────────────┘
-```
+![Interface map: Community contributors connect via ICD-01 REST/WS API to ESP32-S3 firmware, which uses ICD-02 internal event bus between Web Server and Control Task, ICD-03/04 sensor and actuator HALs, ICD-05 profile schema, ICD-06 BLE scales, and ICD-07 hardware interface to physical hardware](diagrams/interface-map.svg)
 
 ### ICD-01: REST + WebSocket API (Firmware ↔ Web App / Mobile App)
 
@@ -2949,43 +2369,7 @@ Total current draw (est.): ~300mA @ 3.3V (ESP32 + WiFi + display + sensors)
 
 ### Proposed Repository Structure for Community
 
-```
-gaggiuino/
-├── firmware/                  # ESP32-S3 firmware (PlatformIO)
-│   ├── src/
-│   ├── lib/
-│   ├── test/
-│   └── platformio.ini
-│
-├── webapp/                    # Web app (separate build, output → firmware/data/)
-│   ├── src/
-│   ├── package.json
-│   └── vite.config.js         # (or svelte.config.js)
-│
-├── docs/
-│   ├── icd-01-rest-websocket-api.md
-│   ├── icd-02-internal-event-bus.md
-│   ├── icd-03-sensor-hal.md
-│   ├── icd-04-actuator-hal.md
-│   ├── icd-05-profile-schema.json
-│   ├── icd-06-ble-scale-driver.md
-│   ├── icd-07-hardware-interface.md
-│   ├── safety-fmea.md
-│   └── getting-started.md
-│
-├── profiles/                  # Community-shared profiles
-│   ├── classic-9-bar.json
-│   ├── turbo-blooming.json
-│   └── lungo-flow.json
-│
-├── hardware/                  # PCB designs (KiCad), enclosure STLs
-│   ├── pcb/
-│   └── enclosure/
-│
-├── DESIGN_DOCUMENT.md
-├── CONTRIBUTING.md
-└── LICENSE
-```
+![Proposed repository structure: gaggiuino/ with firmware/ (PlatformIO), webapp/ (Vite), docs/ (ICDs, safety, getting-started), profiles/ (community JSON), hardware/ (PCB, enclosure), and root files](diagrams/repo-structure.svg)
 
 **`docs/getting-started.md` must include:** Assembly instructions with wiring diagrams, step-by-step build order, tools needed, and safety warnings. The BOM alone is not sufficient for a safe build. This is the most important document for new builders.
 

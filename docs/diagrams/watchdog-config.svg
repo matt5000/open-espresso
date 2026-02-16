@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 200" width="560" height="200">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+  </style>
+  <rect width="560" height="200" fill="#f8fafc" rx="4"/>
+  <text x="280" y="26" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="bold">Hardware Watchdog Configuration</text>
+  <!-- Root -->
+  <rect x="20" y="46" width="280" height="30" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="160" y="66" text-anchor="middle" class="mono" fill="#991b1b" font-weight="bold">Hardware Watchdog (ESP32 TWDT)</text>
+  <!-- Trunk -->
+  <line x1="40" y1="76" x2="40" y2="180" stroke="#64748b" stroke-width="1.5"/>
+  <!-- Feed requirement -->
+  <circle cx="40" cy="100" r="3" fill="#64748b"/>
+  <line x1="40" y1="100" x2="60" y2="100" stroke="#64748b" stroke-width="1.5"/>
+  <text x="70" y="104" fill="#0f172a" font-size="12">ControlTask must feed watchdog every <tspan font-weight="bold">100 ms</tspan></text>
+  <!-- Timeout -->
+  <circle cx="40" cy="128" r="3" fill="#64748b"/>
+  <line x1="40" y1="128" x2="60" y2="128" stroke="#64748b" stroke-width="1.5"/>
+  <text x="70" y="132" fill="#0f172a" font-size="12">Timeout: <tspan font-weight="bold">500 ms</tspan> (tolerates up to 5 missed feeds)</text>
+  <!-- Reset behavior -->
+  <circle cx="40" cy="156" r="3" fill="#64748b"/>
+  <line x1="40" y1="156" x2="60" y2="156" stroke="#64748b" stroke-width="1.5"/>
+  <text x="70" y="160" fill="#991b1b" font-size="12">If not fed → hardware reset → all outputs safe state</text>
+  <!-- GPIO default -->
+  <circle cx="40" cy="180" r="3" fill="#64748b"/>
+  <line x1="40" y1="180" x2="60" y2="180" stroke="#64748b" stroke-width="1.5"/>
+  <text x="70" y="184" fill="#0f172a" font-size="12">GPIO outputs default to OFF on reset (SSR, pump, solenoid)</text>
+</svg>

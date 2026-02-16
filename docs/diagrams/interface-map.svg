@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" width="900" height="720">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+    .title { font-size: 16px; font-weight: bold; fill: #0f172a; }
+    .label { font-size: 11px; fill: #64748b; }
+    .field { font-size: 13px; fill: #0f172a; }
+    .emphasis-text { font-size: 13px; fill: #1e40af; }
+    .icd-label { font-size: 11px; font-weight: bold; fill: #5b21b6; }
+    .section-label { font-size: 12px; font-weight: bold; fill: #0f172a; }
+  </style>
+  <rect width="900" height="720" fill="#f8fafc" rx="4"/>
+
+  <text x="450" y="28" text-anchor="middle" class="title">Interface Control Document (ICD) Map</text>
+
+  <!-- ========================================= -->
+  <!-- COMMUNITY CONTRIBUTORS (top) -->
+  <!-- ========================================= -->
+  <rect x="200" y="44" width="500" height="60" rx="8" fill="white" stroke="#334155" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="450" y="62" text-anchor="middle" class="section-label">COMMUNITY CONTRIBUTORS</text>
+  <rect x="230" y="72" width="160" height="24" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="310" y="89" text-anchor="middle" class="emphasis-text" style="font-size:11px;">Web App Developer</text>
+  <rect x="510" y="72" width="160" height="24" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="590" y="89" text-anchor="middle" class="emphasis-text" style="font-size:11px;">iOS / Android App Dev</text>
+
+  <!-- ICD-01 arrow down -->
+  <line x1="450" y1="104" x2="450" y2="146" stroke="#3b82f6" stroke-width="1.5"/>
+  <polygon points="445,142 455,142 450,150" fill="#3b82f6"/>
+  <!-- ICD-01 label -->
+  <rect x="460" y="112" width="168" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="544" y="129" text-anchor="middle" class="icd-label">ICD-01: REST + WebSocket</text>
+
+  <!-- ========================================= -->
+  <!-- ESP32-S3 FIRMWARE BOUNDARY -->
+  <!-- ========================================= -->
+  <rect x="60" y="150" width="780" height="260" rx="10" fill="white" stroke="#334155" stroke-width="2.5"/>
+  <text x="80" y="172" class="section-label">ESP32-S3 Firmware</text>
+
+  <!-- Web Server (Core 1) -->
+  <rect x="120" y="186" width="200" height="44" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="220" y="213" text-anchor="middle" class="emphasis-text" font-weight="bold">Web Server</text>
+  <text x="220" y="226" text-anchor="middle" class="label">Core 1</text>
+
+  <!-- ICD-02 arrow (Web Server -> Control Task) -->
+  <line x1="320" y1="208" x2="456" y2="208" stroke="#3b82f6" stroke-width="1.5"/>
+  <polygon points="452,203 452,213 460,208" fill="#3b82f6"/>
+  <!-- ICD-02 label -->
+  <rect x="336" y="184" width="108" height="20" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="390" y="198" text-anchor="middle" class="icd-label">ICD-02: Event Bus</text>
+  <text x="390" y="226" text-anchor="middle" class="label">FreeRTOS Queues</text>
+
+  <!-- Control Task (Core 0) -->
+  <rect x="460" y="186" width="200" height="44" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="560" y="213" text-anchor="middle" class="emphasis-text" font-weight="bold">Control Task</text>
+  <text x="560" y="226" text-anchor="middle" class="label">Core 0</text>
+
+  <!-- === Control Task branches downward === -->
+  <!-- Vertical line from Control Task -->
+  <line x1="560" y1="230" x2="560" y2="260" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Horizontal distribution line -->
+  <line x1="160" y1="260" x2="760" y2="260" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Branch down to ICD-03: Sensor HAL -->
+  <line x1="160" y1="260" x2="160" y2="296" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="88" y="296" width="144" height="44" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="160" y="316" text-anchor="middle" class="icd-label">ICD-03</text>
+  <text x="160" y="332" text-anchor="middle" class="icd-label">Sensor HAL</text>
+
+  <!-- Branch down to ICD-04: Actuator HAL -->
+  <line x1="360" y1="260" x2="360" y2="296" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="288" y="296" width="144" height="44" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="360" y="316" text-anchor="middle" class="icd-label">ICD-04</text>
+  <text x="360" y="332" text-anchor="middle" class="icd-label">Actuator HAL</text>
+
+  <!-- Branch down to ICD-05: Profile Format -->
+  <line x1="560" y1="260" x2="560" y2="296" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="488" y="296" width="144" height="44" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="560" y="316" text-anchor="middle" class="icd-label">ICD-05</text>
+  <text x="560" y="332" text-anchor="middle" class="icd-label">Profile Format</text>
+
+  <!-- Branch down to ICD-06: BLE Scales -->
+  <line x1="760" y1="260" x2="760" y2="296" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="688" y="296" width="144" height="44" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="760" y="316" text-anchor="middle" class="icd-label">ICD-06</text>
+  <text x="760" y="332" text-anchor="middle" class="icd-label">BLE Scales</text>
+
+  <!-- Arrows from ICD boxes down to targets below firmware boundary -->
+
+  <!-- ICD-03 -> Sensors -->
+  <line x1="160" y1="340" x2="160" y2="370" stroke="#64748b" stroke-width="1.5"/>
+  <polygon points="155,366 165,366 160,374" fill="#64748b"/>
+
+  <!-- ICD-04 -> Actuators -->
+  <line x1="360" y1="340" x2="360" y2="370" stroke="#64748b" stroke-width="1.5"/>
+  <polygon points="355,366 365,366 360,374" fill="#64748b"/>
+
+  <!-- ICD-05 -> JSON Schema -->
+  <line x1="560" y1="340" x2="560" y2="370" stroke="#64748b" stroke-width="1.5"/>
+  <polygon points="555,366 565,366 560,374" fill="#64748b"/>
+
+  <!-- ICD-06 -> Scale Drivers -->
+  <line x1="760" y1="340" x2="760" y2="370" stroke="#64748b" stroke-width="1.5"/>
+  <polygon points="755,366 765,366 760,374" fill="#64748b"/>
+
+  <!-- ========================================= -->
+  <!-- TARGETS BELOW FIRMWARE BOUNDARY -->
+  <!-- ========================================= -->
+
+  <!-- Sensors box -->
+  <rect x="84" y="424" width="152" height="56" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="160" y="446" text-anchor="middle" class="field" font-weight="bold">Sensors</text>
+  <text x="160" y="462" text-anchor="middle" class="mono" style="font-size:10px;">MAX31855 (Temp)</text>
+  <text x="160" y="474" text-anchor="middle" class="mono" style="font-size:10px;">ADS1115 (Press) / Flow</text>
+
+  <!-- Actuators box -->
+  <rect x="284" y="424" width="152" height="56" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="360" y="446" text-anchor="middle" class="field" font-weight="bold">Actuators</text>
+  <text x="360" y="462" text-anchor="middle" class="mono" style="font-size:10px;">SSR / AC Dimmer</text>
+  <text x="360" y="474" text-anchor="middle" class="mono" style="font-size:10px;">Solenoid (3-way)</text>
+
+  <!-- JSON Schema box -->
+  <rect x="484" y="424" width="152" height="56" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="560" y="446" text-anchor="middle" class="field" font-weight="bold">JSON Schema</text>
+  <text x="560" y="462" text-anchor="middle" class="mono" style="font-size:10px;">Profile definitions</text>
+  <text x="560" y="474" text-anchor="middle" class="mono" style="font-size:10px;">LittleFS storage</text>
+
+  <!-- Scale Drivers box -->
+  <rect x="684" y="424" width="152" height="56" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="760" y="446" text-anchor="middle" class="field" font-weight="bold">Scale Drivers</text>
+  <text x="760" y="462" text-anchor="middle" class="mono" style="font-size:10px;">Decent / Acaia / Felicita</text>
+  <text x="760" y="474" text-anchor="middle" class="mono" style="font-size:10px;">BLE GATT Profiles</text>
+
+  <!-- Connecting lines from ICD boxes into target boxes (through firmware boundary) -->
+  <line x1="160" y1="374" x2="160" y2="424" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="360" y1="374" x2="360" y2="424" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="560" y1="374" x2="560" y2="424" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="760" y1="374" x2="760" y2="424" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- ========================================= -->
+  <!-- ICD-07: Hardware Interface (bottom) -->
+  <!-- ========================================= -->
+
+  <!-- Vertical lines from sensor/actuator boxes down -->
+  <line x1="160" y1="480" x2="160" y2="530" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="360" y1="480" x2="360" y2="530" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Horizontal merge line -->
+  <line x1="160" y1="530" x2="560" y2="530" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- Down to ICD-07 -->
+  <line x1="360" y1="530" x2="360" y2="556" stroke="#64748b" stroke-width="1.5"/>
+  <polygon points="355,552 365,552 360,560" fill="#64748b"/>
+
+  <!-- ICD-07 label -->
+  <rect x="228" y="560" width="264" height="36" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="360" y="583" text-anchor="middle" class="icd-label">ICD-07: Hardware Interface (Pin Assignments)</text>
+
+  <!-- Arrow down to Physical Hardware -->
+  <line x1="360" y1="596" x2="360" y2="630" stroke="#64748b" stroke-width="1.5"/>
+  <polygon points="355,626 365,626 360,634" fill="#64748b"/>
+
+  <!-- Physical Hardware box -->
+  <rect x="200" y="634" width="320" height="44" rx="6" fill="white" stroke="#334155" stroke-width="2.5"/>
+  <text x="360" y="657" text-anchor="middle" class="field" font-weight="bold">Physical Hardware</text>
+  <text x="360" y="672" text-anchor="middle" class="label">ESP32-S3 GPIO / SPI / I2C / UART pins</text>
+
+  <!-- Legend -->
+  <rect x="18" y="690" width="12" height="12" rx="2" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="36" y="700" class="label">ICD boundary</text>
+  <rect x="130" y="690" width="12" height="12" rx="2" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="148" y="700" class="label">Firmware module</text>
+  <line x1="250" y1="696" x2="280" y2="696" stroke="#3b82f6" stroke-width="1.5"/>
+  <polygon points="277,693 277,699 282,696" fill="#3b82f6"/>
+  <text x="288" y="700" class="label">Data flow</text>
+  <line x1="370" y1="696" x2="400" y2="696" stroke="#64748b" stroke-width="1.5"/>
+  <text x="406" y="700" class="label">Structural connection</text>
+</svg>

@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; }
+  </style>
+
+  <!-- Background -->
+  <rect width="600" height="400" fill="#f8fafc" rx="4"/>
+
+  <!-- Title -->
+  <text x="300" y="28" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="bold">Enclosure Interior (Lid Removed, Top View)</text>
+
+  <!-- Outer enclosure rectangle -->
+  <rect x="50" y="48" width="500" height="330" rx="8" fill="#fafaf9" stroke="#78716c" stroke-width="2"/>
+  <text x="300" y="68" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="bold">ENCLOSURE INTERIOR (lid removed, top view)</text>
+
+  <!-- ============ Top row: ESP32 + breakout boards ============ -->
+
+  <!-- ESP32-S3 Dev Board (largest component) -->
+  <rect x="75" y="85" width="200" height="90" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="175" y="118" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">ESP32-S3 Dev Board</text>
+  <text x="175" y="136" text-anchor="middle" fill="#1e40af" font-size="11">WROVER + PSRAM</text>
+  <text x="175" y="153" text-anchor="middle" fill="#1e40af" font-size="10">Pin headers along edges</text>
+  <!-- USB port indicator -->
+  <rect x="160" y="85" width="30" height="8" rx="2" fill="#1e40af"/>
+  <text x="175" y="82" text-anchor="middle" fill="#64748b" font-size="8">USB-C</text>
+
+  <!-- MAX31855 breakout -->
+  <rect x="295" y="85" width="110" height="90" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="350" y="118" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="bold">MAX31855</text>
+  <text x="350" y="136" text-anchor="middle" fill="#64748b" font-size="10">TC Breakout</text>
+  <text x="350" y="153" text-anchor="middle" fill="#64748b" font-size="10" class="mono">SPI</text>
+
+  <!-- ADS1115 ADC breakout -->
+  <rect x="420" y="85" width="110" height="90" rx="5" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="475" y="118" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="bold">ADS1115</text>
+  <text x="475" y="136" text-anchor="middle" fill="#64748b" font-size="10">ADC Breakout</text>
+  <text x="475" y="153" text-anchor="middle" fill="#64748b" font-size="10" class="mono">I2C</text>
+
+  <!-- Bus wires from ESP32 to breakouts -->
+  <line x1="275" y1="120" x2="295" y2="120" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="285" y="115" text-anchor="middle" fill="#3b82f6" font-size="8" class="mono">SPI</text>
+  <line x1="275" y1="140" x2="295" y2="140" stroke="#3b82f6" stroke-width="1.5"/>
+
+  <line x1="405" y1="130" x2="420" y2="130" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="413" y="125" text-anchor="middle" fill="#3b82f6" font-size="8" class="mono">I2C</text>
+
+  <!-- ============ TFT display area (below boards) ============ -->
+
+  <rect x="100" y="200" width="400" height="100" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="300" y="235" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">ILI9341 2.8" TFT + CST816 Touch</text>
+  <text x="300" y="255" text-anchor="middle" fill="#1e40af" font-size="11">Face-down toward lid (screen visible through window)</text>
+  <text x="300" y="275" text-anchor="middle" fill="#64748b" font-size="10" font-style="italic">FPC ribbon cable to ESP32-S3 header</text>
+
+  <!-- FPC cable from TFT to ESP32 -->
+  <path d="M 175 200 C 175 190, 175 185, 175 175" stroke="#3b82f6" stroke-width="1.5" fill="none"/>
+  <text x="190" y="192" fill="#3b82f6" font-size="8" class="mono">FPC</text>
+
+  <!-- ============ Bottom edge: Cable gland entries ============ -->
+
+  <line x1="80" y1="330" x2="520" y2="330" stroke="#78716c" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="300" y="325" text-anchor="middle" fill="#64748b" font-size="10">Cable gland entries (from Gaggia rear panel)</text>
+
+  <!-- Gland entry markers -->
+  <!-- TC -->
+  <rect x="88" y="340" width="44" height="26" rx="3" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="110" y="352" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="bold" class="mono">TC</text>
+  <text x="110" y="363" text-anchor="middle" fill="#64748b" font-size="8">2-wire</text>
+
+  <!-- PSI -->
+  <rect x="144" y="340" width="44" height="26" rx="3" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="166" y="352" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="bold" class="mono">PSI</text>
+  <text x="166" y="363" text-anchor="middle" fill="#64748b" font-size="8">3-wire</text>
+
+  <!-- FLW -->
+  <rect x="200" y="340" width="44" height="26" rx="3" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="222" y="352" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="bold" class="mono">FLW</text>
+  <text x="222" y="363" text-anchor="middle" fill="#64748b" font-size="8">3-wire</text>
+
+  <!-- SSR -->
+  <rect x="260" y="340" width="44" height="26" rx="3" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="282" y="352" text-anchor="middle" fill="#991b1b" font-size="9" font-weight="bold" class="mono">SSR</text>
+  <text x="282" y="363" text-anchor="middle" fill="#991b1b" font-size="8">ctrl</text>
+
+  <!-- DIM -->
+  <rect x="320" y="340" width="44" height="26" rx="3" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="342" y="352" text-anchor="middle" fill="#991b1b" font-size="9" font-weight="bold" class="mono">DIM</text>
+  <text x="342" y="363" text-anchor="middle" fill="#991b1b" font-size="8">ZC+gate</text>
+
+  <!-- SOL -->
+  <rect x="380" y="340" width="44" height="26" rx="3" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="402" y="352" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="bold" class="mono">SOL</text>
+  <text x="402" y="363" text-anchor="middle" fill="#64748b" font-size="8">ctrl</text>
+
+  <!-- 5V -->
+  <rect x="440" y="340" width="44" height="26" rx="3" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="462" y="352" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="bold" class="mono">5V</text>
+  <text x="462" y="363" text-anchor="middle" fill="#64748b" font-size="8">DC pwr</text>
+
+  <!-- Connection lines from glands up to boards -->
+  <line x1="110" y1="340" x2="110" y2="175" stroke="#64748b" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="110" y1="175" x2="320" y2="175" stroke="#64748b" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <line x1="166" y1="340" x2="166" y2="182" stroke="#64748b" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="166" y1="182" x2="450" y2="182" stroke="#64748b" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- Note -->
+  <text x="300" y="390" text-anchor="middle" fill="#64748b" font-size="10">All low-voltage signal wiring only; HV stays inside machine chassis</text>
+</svg>

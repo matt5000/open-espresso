@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; }
+  </style>
+
+  <!-- Background -->
+  <rect width="600" height="600" fill="#f8fafc" rx="4"/>
+
+  <!-- Title -->
+  <text x="300" y="28" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="bold">Rear Panel Layout: Gaggia Classic + External Enclosure</text>
+
+  <!-- ================= GAGGIA CLASSIC (rear view) ================= -->
+  <rect x="130" y="50" width="340" height="200" rx="6" fill="#fafaf9" stroke="#78716c" stroke-width="2"/>
+  <text x="300" y="72" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">GAGGIA CLASSIC (rear view)</text>
+  <text x="300" y="90" text-anchor="middle" fill="#64748b" font-size="11">~230 mm wide</text>
+
+  <!-- Vent holes (left side) -->
+  <rect x="152" y="108" width="60" height="40" rx="3" fill="white" stroke="#78716c" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="182" y="133" text-anchor="middle" fill="#64748b" font-size="10">Vent holes</text>
+
+  <!-- Machine interior label -->
+  <text x="300" y="135" text-anchor="middle" fill="#64748b" font-size="11" font-style="italic">Machine interior above</text>
+
+  <!-- IEC C14 Power Inlet (right side) -->
+  <rect x="368" y="105" width="70" height="46" rx="3" fill="white" stroke="#78716c" stroke-width="1.5"/>
+  <text x="403" y="125" text-anchor="middle" fill="#0f172a" font-size="10" font-weight="bold">IEC C14</text>
+  <text x="403" y="140" text-anchor="middle" fill="#64748b" font-size="10">Power inlet</text>
+
+  <!-- Bottom edge of rear panel with cable glands -->
+  <line x1="150" y1="220" x2="450" y2="220" stroke="#78716c" stroke-width="2"/>
+  <text x="300" y="212" text-anchor="middle" fill="#64748b" font-size="10">Bottom edge of rear panel</text>
+
+  <!-- Cable glands group -->
+  <!-- Gland 1: TC -->
+  <circle cx="195" cy="232" r="8" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="195" y="236" text-anchor="middle" fill="#0f172a" font-size="8" font-weight="bold">TC</text>
+  <text x="195" y="254" text-anchor="middle" fill="#64748b" font-size="9">PG7</text>
+
+  <!-- Gland 2: PSI -->
+  <circle cx="240" cy="232" r="8" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="240" y="236" text-anchor="middle" fill="#0f172a" font-size="8" font-weight="bold">PSI</text>
+  <text x="240" y="254" text-anchor="middle" fill="#64748b" font-size="9">PG7</text>
+
+  <!-- Gland 3: FLW -->
+  <circle cx="285" cy="232" r="8" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="285" y="236" text-anchor="middle" fill="#0f172a" font-size="7" font-weight="bold">FLW</text>
+  <text x="285" y="254" text-anchor="middle" fill="#64748b" font-size="9">PG7</text>
+
+  <!-- Gland 4: SSR -->
+  <circle cx="330" cy="232" r="10" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="330" y="236" text-anchor="middle" fill="#0f172a" font-size="8" font-weight="bold">SSR</text>
+  <text x="330" y="254" text-anchor="middle" fill="#64748b" font-size="9">PG9</text>
+
+  <!-- Gland 5: DIM -->
+  <circle cx="375" cy="232" r="10" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="375" y="236" text-anchor="middle" fill="#0f172a" font-size="7" font-weight="bold">DIM</text>
+  <text x="375" y="254" text-anchor="middle" fill="#64748b" font-size="9">PG9</text>
+
+  <!-- Gland 6: SOL -->
+  <circle cx="415" cy="232" r="8" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="415" y="236" text-anchor="middle" fill="#0f172a" font-size="7" font-weight="bold">SOL</text>
+  <text x="415" y="254" text-anchor="middle" fill="#64748b" font-size="9">PG7</text>
+
+  <!-- Cable lines from glands to enclosure -->
+  <line x1="195" y1="240" x2="195" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="240" y1="240" x2="240" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="285" y1="240" x2="285" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="330" y1="242" x2="330" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="375" y1="242" x2="375" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <line x1="415" y1="240" x2="415" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 3"/>
+
+  <!-- 5V DC power cable (separate, from machine) -->
+  <line x1="160" y1="245" x2="160" y2="340" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="148" y="295" text-anchor="middle" fill="#3b82f6" font-size="9" transform="rotate(-90, 148, 295)">5V DC</text>
+
+  <!-- Cable label -->
+  <text x="300" y="290" text-anchor="middle" fill="#64748b" font-size="11">Cable glands through rear panel</text>
+
+  <!-- ================= EXTERNAL ENCLOSURE ================= -->
+  <rect x="100" y="320" width="400" height="250" rx="8" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="300" y="344" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">EXTERNAL ENCLOSURE</text>
+  <text x="300" y="360" text-anchor="middle" fill="#64748b" font-size="11">~120 mm x 80 mm x 40 mm (IP54 rated)</text>
+
+  <!-- Gland entries into enclosure (top edge) -->
+  <circle cx="195" cy="320" r="5" fill="#334155"/>
+  <circle cx="240" cy="320" r="5" fill="#334155"/>
+  <circle cx="285" cy="320" r="5" fill="#334155"/>
+  <circle cx="330" cy="320" r="6" fill="#334155"/>
+  <circle cx="375" cy="320" r="6" fill="#334155"/>
+  <circle cx="415" cy="320" r="5" fill="#334155"/>
+  <circle cx="160" cy="320" r="4" fill="#3b82f6"/>
+
+  <!-- ESP32-S3 Dev Board -->
+  <rect x="125" y="375" width="130" height="50" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="190" y="396" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">ESP32-S3</text>
+  <text x="190" y="412" text-anchor="middle" fill="#1e40af" font-size="10">Dev Board + PSRAM</text>
+
+  <!-- MAX31855 breakout -->
+  <rect x="270" y="375" width="100" height="50" rx="4" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="320" y="396" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="bold">MAX31855</text>
+  <text x="320" y="412" text-anchor="middle" fill="#64748b" font-size="10">TC breakout</text>
+
+  <!-- ADS1115 ADC -->
+  <rect x="385" y="375" width="90" height="50" rx="4" fill="white" stroke="#334155" stroke-width="1.5"/>
+  <text x="430" y="396" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="bold">ADS1115</text>
+  <text x="430" y="412" text-anchor="middle" fill="#64748b" font-size="10">ADC breakout</text>
+
+  <!-- ILI9341 TFT Display -->
+  <rect x="140" y="445" width="320" height="60" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="300" y="472" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">ILI9341 2.8" TFT + CST816 Touch</text>
+  <text x="300" y="492" text-anchor="middle" fill="#1e40af" font-size="10">Display visible through lid window</text>
+
+  <!-- SPI/I2C bus lines -->
+  <line x1="255" y1="400" x2="270" y2="400" stroke="#3b82f6" stroke-width="1.5"/>
+  <line x1="370" y1="400" x2="385" y2="400" stroke="#3b82f6" stroke-width="1.5"/>
+  <line x1="190" y1="425" x2="190" y2="445" stroke="#3b82f6" stroke-width="1.5"/>
+
+  <!-- Bus labels -->
+  <text x="263" y="393" text-anchor="middle" fill="#3b82f6" font-size="8" class="mono">SPI</text>
+  <text x="378" y="393" text-anchor="middle" fill="#3b82f6" font-size="8" class="mono">I2C</text>
+  <text x="205" y="438" fill="#3b82f6" font-size="8" class="mono">SPI + I2C</text>
+
+  <!-- Mounting note -->
+  <text x="300" y="555" text-anchor="middle" fill="#64748b" font-size="10">Enclosure mounts to rear panel with M3 standoffs or magnets</text>
+</svg>

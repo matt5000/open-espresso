@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interfaces — Open Espresso Design Document</title>
+  <link rel="stylesheet" href="css/design-document.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="container">
+    <!-- ================================================================ -->
+    <!-- PAGE NAVIGATION -->
+    <!-- ================================================================ -->
+    <nav class="page-nav" aria-label="Document pages">
+      <a href="DESIGN_DOCUMENT.html" class="nav-home">Home</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="current-state.html">Current State</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="hardware.html">Hardware</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="software.html">Software</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="safety.html">Safety</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="data-model.html">Data Model</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="requirements.html">Requirements</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="interfaces.html" class="active">Interfaces</a>
+      <span class="nav-separator" aria-hidden="true">|</span>
+      <a href="decisions.html">Decisions</a>
+    </nav>
+
+    <!-- ================================================================ -->
+    <!-- DOCUMENT HEADER -->
+    <!-- ================================================================ -->
+    <header class="doc-header">
+      <h1>Interface Control Documents &amp; APIs</h1>
+      <p class="intro">Section 20 — ICD-01 through ICD-07: REST/WebSocket API, internal event bus, HALs, profile schema, BLE scales, and hardware pinout</p>
+      <div class="doc-meta">
+        <span class="tag tag-blue">Version 3.0</span>
+        <span class="tag">2026-02-16</span>
+        <span class="tag tag-green">MIT License</span>
+      </div>
+    </header>
+
+    <main id="main-content">
+
+      <!-- ================================================================ -->
+      <!-- SECTION 20: Interface Control Documents -->
+      <!-- ================================================================ -->
+      <section class="section" id="section-20">
+        <h2>20. Interface Control Documents &amp; APIs</h2>
+
+        <p>For this to work as a community project, contributors need to be able to work on isolated pieces without understanding the entire system. That means <strong>formal, versioned interface specifications</strong> at every boundary where two components meet.</p>
+
+        <h3 id="interface-map">Interface Map</h3>
+        <div class="diagram-container">
+          <img src="diagrams/interface-map.svg" alt="ICD overview map: community contributors via ICD-01, firmware modules connected by ICD-02 through ICD-07 to physical hardware" loading="lazy">
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-01: REST + WebSocket API -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-01">
+        <h3>ICD-01: REST + WebSocket API (Firmware &harr; Web App / Mobile App)</h3>
+
+        <p><strong>Who uses this:</strong> Web app developers, mobile app developers, third-party integrators.</p>
+
+        <p><strong>Why it matters:</strong> This is the primary interface for the community. Anyone building a UI (web, iOS, Android, Home Assistant integration, etc.) depends on this API being stable, versioned, and well-documented.</p>
+
+        <h4>REST API</h4>
+
+        <p>All endpoints return JSON. Content-Type: <code>application/json</code>.</p>
+
+        <p><strong>Error response format:</strong> <code>{"error": "Human-readable message", "code": N}</code> where <code>code</code> is the HTTP status code (not an application-specific code).</p>
+
+        <p><strong>HTTP status codes used:</strong></p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Meaning</th><th>When</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>200</td><td>OK</td><td>Successful GET, PUT</td></tr>
+              <tr><td>201</td><td>Created</td><td>Successful POST (new resource)</td></tr>
+              <tr><td>204</td><td>No Content</td><td>Successful DELETE</td></tr>
+              <tr><td>400</td><td>Bad Request</td><td>Invalid JSON, validation failure, bad firmware binary</td></tr>
+              <tr><td>401</td><td>Unauthorized</td><td>Missing/invalid session token or OTA password</td></tr>
+              <tr><td>404</td><td>Not Found</td><td>Profile or shot ID does not exist</td></tr>
+              <tr><td>409</td><td>Conflict</td><td>Profile name already exists</td></tr>
+              <tr><td>429</td><td>Too Many Requests</td><td>Rate limit exceeded (auth, OTA)</td></tr>
+              <tr><td>500</td><td>Internal Server Error</td><td>LittleFS write failure, unexpected error</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre><code>Base URL: http://&lt;device-ip&gt;/api/v1
+
+── Auth ──────────────────────────────────────────────────────
+
+POST   /auth                     &rarr; 201 {"token": "abc123..."}
+  Body: {"pin": "1234"}          (see Authentication Model below)
+
+── Profiles ──────────────────────────────────────────────────
+
+GET    /profiles                 &rarr; 200 ProfileSummary[]
+GET    /profiles/:id             &rarr; 200 Profile
+POST   /profiles                 &rarr; 201 Profile (created)            [Auth: session token]
+PUT    /profiles/:id             &rarr; 200 Profile (updated)            [Auth: session token]
+DELETE /profiles/:id             &rarr; 204                              [Auth: session token]
+
+── Active Profile ────────────────────────────────────────────
+
+GET    /active-profile           &rarr; 200 {"id": N, "name": "..."}
+PUT    /active-profile           &rarr; 200 {"id": N}                    [Auth: session token]
+  Body: {"id": N}
+
+── System Config ─────────────────────────────────────────────
+
+GET    /config                   &rarr; 200 SystemConfig (wifi_password redacted)
+PUT    /config                   &rarr; 200 SystemConfig (updated)       [Auth: session token]
+  Body: Partial&lt;SystemConfig&gt;    (only changed fields required)
+
+── Shot History ──────────────────────────────────────────────
+
+GET    /shots                    &rarr; 200 ShotSummary[] (newest first)
+GET    /shots/:id                &rarr; 200 ShotRecord (with datapoints)
+DELETE /shots/:id                &rarr; 204                              [Auth: session token]
+GET    /shots/:id/export         &rarr; 200 CSV download (Content-Type: text/csv)
+
+── Data Export/Import ────────────────────────────────────────
+
+GET    /export                   &rarr; 200 {"config": ..., "profiles": [...], "shots": [...]}
+POST   /profiles/import          &rarr; 201 Profile (created)            [Auth: session token]
+  Body: Profile JSON (validated per REQ-D-002)
+
+── System ────────────────────────────────────────────────────
+
+GET    /system/info              &rarr; 200 {"firmware": "1.0.0", "uptime_s": N,
+                                    "free_heap": N, "wifi_rssi": N,
+                                    "api_version": "v1", "defaults_active": true}
+POST   /system/ota               &rarr; 200 {"ok": true}                [Auth: OTA password]
+  Header: X-OTA-Password: &lt;password&gt;    (REQUIRED - see REQ-F-012)
+  Returns 401 if password missing/incorrect.
+  Returns 400 if firmware binary is invalid.
+  Password is stored in NVS, set via /config.
+POST   /system/restart           &rarr; 200 {"ok": true}                [Auth: OTA password]
+  Header: X-OTA-Password: &lt;password&gt;    (REQUIRED - destructive action)
+POST   /system/factory-reset     &rarr; 200 {"ok": true}                [Auth: OTA password]
+  Header: X-OTA-Password: &lt;password&gt;    (REQUIRED - destructive action)</code></pre>
+
+        <p><strong>Response types:</strong></p>
+
+        <pre><code>// ProfileSummary (returned by GET /profiles)
+{
+  "id": 1,
+  "name": "Classic 9 Bar",
+  "phases": 2,                // number of phases
+  "is_active": true           // is this the currently active profile?
+}
+
+// ShotSummary (returned by GET /shots)
+{
+  "id": 42,
+  "timestamp": 1708123456,   // Unix timestamp (seconds since epoch)
+  "profile_name": "Classic 9 Bar",
+  "duration_ms": 28000,
+  "total_weight_g": 36.2,    // -1 if no scales connected
+  "total_volume_ml": 44.1
+}</code></pre>
+
+        <p><strong>Versioning:</strong> The <code>/api/v1</code> prefix allows breaking changes in <code>/api/v2</code> while keeping v1 working. The version is also returned in <code>GET /system/info</code>.</p>
+
+        <h4 id="auth-model">Authentication Model</h4>
+
+        <p>Three tiers of access:</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Tier</th><th>Scope</th><th>Mechanism</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Open</strong></td><td>Read-only: <code>GET /sensors</code>, <code>GET /profiles</code>, <code>GET /shots</code>, WebSocket sensor stream</td><td>None</td><td>Convenient for monitoring from any device on the network</td></tr>
+              <tr><td><strong>Session</strong></td><td>Write operations: <code>PUT /config</code>, <code>POST /profiles</code>, <code>DELETE /shots</code>, WebSocket commands (<code>start_shot</code>, <code>set_temp</code>, etc.)</td><td>Session token via <code>POST /api/v1/auth</code> with PIN</td><td>Prevents accidental/unauthorized changes from any device on the WiFi</td></tr>
+              <tr><td><strong>Admin</strong></td><td>Destructive: OTA upload, restart, factory-reset</td><td>OTA password via <code>X-OTA-Password</code> header</td><td>Prevents bricking or wiping the device</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre><code>── Session Token Flow ────────────────────────────────────────
+
+POST /api/v1/auth
+  Body: {"pin": "1234"}               // Default PIN: 1234 (user must change via config)
+  Response: {"token": "abc123..."}     // 32-byte random token, valid until reboot
+
+All write endpoints require:
+  Header: Authorization: Bearer &lt;token&gt;
+  Returns 401 if missing/invalid.
+
+WebSocket commands require auth message after connection:
+  {"type": "auth", "token": "abc123..."}
+  Server responds: {"type": "auth_ok"} or {"type": "auth_fail"}
+  Unauthenticated clients receive sensor data but cannot send commands.
+
+── Rate Limiting ─────────────────────────────────────────────
+
+POST /api/v1/auth:   Max 5 attempts per minute. Returns 429 after limit.
+POST /system/ota:    Max 3 attempts per minute. Returns 429 after limit.
+POST /system/restart: Max 1 per 10 seconds.
+POST /system/factory-reset: Max 1 per 60 seconds.</code></pre>
+
+        <p><strong>Default credentials:</strong> PIN is <code>1234</code>, OTA password is <code>openespresso</code>. Both must be changed by the user during first setup. The web app prompts for this on first connection if defaults are still active.</p>
+
+        <p><strong>WiFi password protection:</strong> <code>GET /config</code> never returns <code>wifi_password</code> in the response body. The field is write-only (accepted on <code>PUT /config</code> but replaced with <code>"********"</code> in <code>GET</code> responses).</p>
+
+        <h4 id="websocket-protocol">WebSocket Protocol</h4>
+
+        <pre><code>Endpoint: ws://&lt;device-ip&gt;/ws
+
+── Server &rarr; Client messages ──────────────────────────────────
+
+Sensor state (sent every 1s when idle, every 100ms during shot):
+{
+  "type": "sensors",
+  "temp": 93.1,            // boiler temperature (&deg;C)
+  "pressure": 8.7,         // brew pressure (bar)
+  "flow": 2.1,             // pump flow rate (ml/s)
+  "weight": 24.3,          // scale weight (g), -1 if no scales
+  "target_temp": 93.0,     // target temperature (&deg;C)
+  "target_pressure": 9.0,  // target pressure (bar), -1 if N/A
+  "target_flow": -1,       // target flow (ml/s), -1 if N/A
+  "pump_pct": 72,          // pump power percentage (0-100)
+  "state": "brewing",      // idle|heating|ready|brewing|steaming|flushing|fault
+  "phase": 2,              // current profile phase index (-1 if not brewing)
+  "shot_time_ms": 12300,   // ms since shot start (0 if not brewing)
+  "water_pumped_ml": 42.1  // total water pumped this shot
+}
+
+State change (sent on transition):
+{
+  "type": "state_change",
+  "from": "heating",
+  "to": "ready"
+}
+
+Notification:
+{
+  "type": "notification",
+  "level": "info|warning|error",
+  "message": "Thermocouple fault detected"
+}
+
+Shot complete:
+{
+  "type": "shot_complete",
+  "shot_id": 42,
+  "duration_ms": 28000,
+  "total_weight_g": 36.2,
+  "total_volume_ml": 44.1
+}
+
+── Client &rarr; Server messages ──────────────────────────────────
+
+Auth (must be first command after connection for write access):
+  {"type": "auth", "token": "abc123..."}
+
+Command (requires prior auth):
+{
+  "type": "command",
+  "action": "tare_scales|start_shot|stop_shot|set_active_profile|set_temp",
+  "params": {}              // action-specific parameters
+}
+
+Examples:
+  {"type": "auth", "token": "abc123..."}
+  {"type": "command", "action": "tare_scales"}
+  {"type": "command", "action": "set_active_profile", "params": {"id": 3}}
+  {"type": "command", "action": "set_temp", "params": {"temp_c": 94.0}}
+
+Commands sent without prior auth receive:
+  {"type": "error", "message": "Authentication required", "code": 401}
+
+── Heartbeat ─────────────────────────────────────────────────
+
+Server sends ping every 5s. Client must respond with pong.
+If no pong received within 15s, server closes connection.</code></pre>
+
+        <p><strong>Document location:</strong> <code>docs/icd-01-rest-websocket-api.md</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-02: Internal Event Bus -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-02">
+        <h3>ICD-02: Internal Event Bus (Control Task &harr; UI Task &harr; BLE Task)</h3>
+
+        <p><strong>Who uses this:</strong> Firmware contributors adding new features, new sensor support, or new actuators.</p>
+
+        <p><strong>Why it matters:</strong> Defines how tasks communicate without shared global state. Any new firmware module must send/receive through these queues.</p>
+
+        <h4>Specification</h4>
+
+        <pre><code>// ── Queue: sensor_data_queue (Control &rarr; UI, BLE &rarr; Control) ──
+
+struct SensorData {
+  uint32_t timestamp_ms;
+  float temperature_c;
+  float pressure_bar;
+  float flow_ml_s;
+  float weight_g;          // -1 if no scales
+  float water_pumped_ml;
+  float pump_power_pct;
+  int8_t phase_index;      // -1 if not in a shot
+  MachineState state;
+};
+// Queue depth: 4 items. Overwrite oldest on full.
+
+// ── Queue: shot_data_queue (Control &rarr; UI for graphing/logging) ──
+
+struct ShotDataPoint {
+  uint32_t time_ms;        // relative to shot start
+  float temperature_c;
+  float pressure_bar;
+  float flow_ml_s;
+  float weight_g;
+  float target_pressure;
+  float target_flow;
+  float target_temp;
+  uint8_t phase_index;
+};
+// Queue depth: 16 items. Overwrite oldest on full.
+
+// ── Queue: command_queue (UI &rarr; Control) ──
+
+enum class CommandType {
+  START_SHOT,
+  STOP_SHOT,
+  SET_ACTIVE_PROFILE,
+  SET_BREW_TEMP,
+  SET_STEAM_TEMP,
+  TARE_SCALES,
+  START_FLUSH,
+  STOP_FLUSH,
+  START_DESCALE,
+  ENTER_STEAM_MODE,
+  EXIT_STEAM_MODE,
+  UPDATE_PID_PARAMS,
+};
+
+struct Command {
+  CommandType type;
+  union {
+    uint8_t profile_id;
+    float temperature_c;
+    struct { float kp, ki, kd; } pid_params;
+  } payload;
+};
+// Queue depth: 8 items. Block on full (commands must not be dropped).
+
+// ── Queue: scale_data_queue (BLE Task &rarr; Control Task) ──
+
+struct ScaleData {
+  float weight_g;
+  bool stable;
+  bool connected;
+};
+// Queue depth: 4 items. Overwrite oldest on full.
+
+// ── Queue: notification_queue (Control &rarr; UI) ──
+
+struct Notification {
+  enum Level { INFO, WARNING, ERROR } level;
+  char message[64];
+};
+// Queue depth: 8 items. Drop oldest on full.
+
+// ── Machine State Enum (shared across all tasks, read-only except Control) ──
+
+enum class MachineState : uint8_t {
+  IDLE,
+  HEATING,
+  READY,
+  BREWING,
+  STEAMING,
+  FLUSHING,
+  DESCALING,
+  FAULT,
+};</code></pre>
+
+        <p><strong>Document location:</strong> <code>docs/icd-02-internal-event-bus.md</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-03: Sensor HAL -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-03">
+        <h3>ICD-03: Sensor Hardware Abstraction Layer (HAL)</h3>
+
+        <p><strong>Who uses this:</strong> Contributors adding new sensor types, porting to different ADCs or thermocouple ICs.</p>
+
+        <p><strong>Why it matters:</strong> Decouples sensor reading logic from specific hardware. Lets you swap ADS1115 for ADS1220 without touching the control loop.</p>
+
+        <h4>Specification</h4>
+
+        <pre><code>// All sensor drivers implement this interface:
+
+class TemperatureSensor {
+public:
+  virtual bool begin() = 0;
+  virtual float readCelsius() = 0;      // returns NAN (IEEE 754) on fault
+  virtual bool hasFault() = 0;
+  virtual const char* faultDescription() = 0;  // returns pointer to static string
+                                               // (e.g., "Open circuit"). Never NULL.
+                                               // Returns "" if no fault.
+};
+
+class PressureSensor {
+public:
+  virtual bool begin() = 0;
+  virtual float readBar() = 0;          // returns NAN on fault
+  virtual bool hasFault() = 0;
+};
+
+class FlowSensor {
+public:
+  virtual bool begin() = 0;
+  virtual float readMlPerSecond() = 0;
+  virtual float getTotalMl() = 0;
+  virtual void resetTotal() = 0;
+};
+
+class WeightSensor {
+public:
+  virtual bool begin() = 0;
+  virtual float readGrams() = 0;        // returns NAN if disconnected
+  virtual bool isConnected() = 0;
+  virtual bool isStable() = 0;
+  virtual void tare() = 0;
+};
+
+// Concrete implementations:
+// - MAX31855TemperatureSensor : TemperatureSensor
+// - MAX31856TemperatureSensor : TemperatureSensor (future)
+// - ADS1115PressureSensor : PressureSensor
+// - ADS1220PressureSensor : PressureSensor (future)
+// - HallEffectFlowSensor : FlowSensor
+// - BLEWeightSensor : WeightSensor (delegates to BLE scale drivers)</code></pre>
+
+        <p><strong>Document location:</strong> <code>docs/icd-03-sensor-hal.md</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-04: Actuator HAL -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-04">
+        <h3>ICD-04: Actuator Hardware Abstraction Layer (HAL)</h3>
+
+        <p><strong>Who uses this:</strong> Contributors working on pump control algorithms, alternative dimmer circuits, or different SSR types.</p>
+
+        <h4>Specification</h4>
+
+        <pre><code>class BoilerController {
+public:
+  virtual bool begin() = 0;
+  virtual void setPower(float percent) = 0;   // 0-100%
+  virtual void off() = 0;                     // immediate shutoff
+  virtual bool isOn() = 0;
+};
+
+class PumpController {
+public:
+  virtual bool begin() = 0;
+  virtual void setPower(float percent) = 0;   // 0-100%
+  virtual void off() = 0;
+  virtual bool isOn() = 0;
+};
+
+class SolenoidController {
+public:
+  virtual bool begin() = 0;
+  virtual void open() = 0;
+  virtual void close() = 0;
+  virtual bool isOpen() = 0;
+};
+
+// Concrete implementations:
+// - SSRBoilerController : BoilerController (GPIO, bang-bang)
+// - TriacPumpController : PumpController (zero-cross phase-angle dimmer)
+// - RelayPumpController : PumpController (future: on/off only, no profiling)
+// - RelaySolenoidController : SolenoidController (GPIO relay)</code></pre>
+
+        <p><strong>Document location:</strong> <code>docs/icd-04-actuator-hal.md</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-05: Profile JSON Schema -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-05">
+        <h3>ICD-05: Profile JSON Schema</h3>
+
+        <p><strong>Who uses this:</strong> Web app developers building the profile editor, mobile app developers, users importing/exporting profiles, community profile sharing.</p>
+
+        <p><strong>Why it matters:</strong> This is the most community-visible data format. People will share profiles. It must be stable and well-documented.</p>
+
+        <h4>Specification</h4>
+
+        <pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://espresso.local/schemas/profile-v1.json",
+  "title": "Open Espresso Shot Profile",
+  "type": "object",
+  "required": ["version", "name", "phases"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version. Always 1 for this format."
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Human-readable profile name."
+    },
+    "author": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Profile creator (for community sharing)."
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Description, recipe notes, grind size, dose, etc."
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "target"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 16,
+            "description": "Phase name (e.g., 'Pre-infusion', 'Extraction')."
+          },
+          "type": {
+            "enum": ["pressure", "flow"],
+            "description": "Control mode for this phase."
+          },
+          "target": {
+            "type": "object",
+            "required": ["end"],
+            "properties": {
+              "start": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 15,
+                "description": "Starting value. -1 = continue from current. Max 15 bar / 10 ml/s."
+              },
+              "end": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 15,
+                "description": "Target value. Max 15 bar (pressure) or 10 ml/s (flow). See REQ-D-002."
+              },
+              "curve": {
+                "enum": ["instant", "linear", "ease_in", "ease_out", "ease_in_out"],
+                "default": "instant"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 120000,
+                "description": "Transition duration in ms. 0 = instant. Max 120s."
+              }
+            }
+          },
+          "restriction": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 15,
+            "description": "Max flow (if type=pressure) or max pressure (if type=flow). -1 = none."
+          },
+          "temperature_c": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 170,
+            "description": "Target brew temperature for this phase. Max 170&deg;C (REQ-S-004)."
+          },
+          "stop_conditions": {
+            "type": "object",
+            "properties": {
+              "time_ms":          {"type": "integer", "minimum": 0},
+              "pressure_above":   {"type": "number"},
+              "pressure_below":   {"type": "number"},
+              "flow_above":       {"type": "number"},
+              "flow_below":       {"type": "number"},
+              "weight_g":         {"type": "number"},
+              "water_pumped_ml":  {"type": "number"}
+            },
+            "description": "Phase advances when ANY condition is met. Omitted conditions are disabled."
+          }
+        }
+      }
+    },
+    "global_stop_conditions": {
+      "type": "object",
+      "properties": {
+        "time_ms":         {"type": "integer", "minimum": 0},
+        "weight_g":        {"type": "number"},
+        "water_pumped_ml": {"type": "number"}
+      },
+      "description": "Shot ends when ANY global condition is met. Omitted = disabled."
+    }
+  }
+}</code></pre>
+
+        <p><strong>Document location:</strong> <code>docs/icd-05-profile-schema.json</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-06: BLE Scale Driver Interface -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-06">
+        <h3>ICD-06: BLE Scale Driver Interface</h3>
+
+        <p><strong>Who uses this:</strong> Contributors adding support for new BLE scale brands.</p>
+
+        <p><strong>Why it matters:</strong> The current Gaggiuino supports 4+ scale brands. New scales appear regularly. A clean driver interface lets the community add support without touching core firmware.</p>
+
+        <h4>Specification</h4>
+
+        <pre><code>// Every BLE scale driver implements this interface:
+
+class BLEScaleDriver {
+public:
+  // Metadata
+  virtual const char* brandName() = 0;       // e.g., "Acaia"
+  virtual const char* modelName() = 0;        // e.g., "Lunar"
+
+  // Connection
+  virtual bool matchesAdvertisement(
+    const BLEAdvertisedDevice&amp; device) = 0;   // return true if this driver
+                                               // handles this device
+  virtual bool connect(BLEClient* client) = 0;
+  virtual void disconnect() = 0;
+  virtual bool isConnected() = 0;
+
+  // Data
+  virtual float getWeight() = 0;              // grams, NAN if unavailable
+  virtual bool isStable() = 0;
+  virtual void tare() = 0;
+
+  // Lifecycle
+  virtual void update() = 0;                  // called every ~100ms
+                                               // handle heartbeats, etc.
+};
+
+/// Registration macro: adds the driver to a global list at compile time.
+// Implemented using a static constructor that appends to a linker-set array.
+#define REGISTER_SCALE_DRIVER(DriverClass)                        \
+  static DriverClass _instance_##DriverClass;                     \
+  static BLEScaleDriver* _reg_##DriverClass                       \
+    __attribute__((used, section(".scale_drivers")))               \
+    = &amp;_instance_##DriverClass;
+
+// Usage (at bottom of each driver .cpp file):
+//   REGISTER_SCALE_DRIVER(AcaiaLunarDriver);
+//   REGISTER_SCALE_DRIVER(FelicitaArcDriver);
+//   REGISTER_SCALE_DRIVER(DecentScaleDriver);
+//
+// The BLE task iterates the .scale_drivers section at startup,
+// calling matchesAdvertisement() on each discovered device to
+// find the right driver. No central registration list to maintain.
+//
+// Alternative (simpler): use a static std::vector and a static
+// initializer. The linker-set approach avoids heap allocation at
+// startup but requires linker script support.</code></pre>
+
+        <p>To add a new scale, a contributor:</p>
+        <ol>
+          <li>Creates <code>src/connectivity/scales/my_scale.h/cpp</code></li>
+          <li>Implements <code>BLEScaleDriver</code> (override all 6 virtual methods)</li>
+          <li>Adds <code>REGISTER_SCALE_DRIVER(MyScaleDriver)</code> at the bottom of the <code>.cpp</code> file</li>
+          <li>Submits a PR — no changes to any other file required</li>
+        </ol>
+
+        <p>No changes to core firmware required.</p>
+
+        <p><strong>Document location:</strong> <code>docs/icd-06-ble-scale-driver.md</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD-07: Hardware Interface -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-07">
+        <h3>ICD-07: Hardware Interface (Pin Assignments &amp; Voltage Levels)</h3>
+
+        <p><strong>Who uses this:</strong> Hardware designers, PCB contributors, anyone wiring up the system.</p>
+
+        <p><strong>Why it matters:</strong> Exact pin assignments and electrical specs so hardware and firmware stay in sync.</p>
+
+        <h4>Specification</h4>
+
+        <pre><code>ESP32-S3 Pin Assignments (DevKitC-1 or custom PCB)
+────────────────────────────────────────────────────
+
+Function              GPIO    Direction   Interface   Notes
+──────────────────    ────    ─────────   ─────────   ─────
+TFT_MOSI (display)   GPIO11  OUT         SPI2        Shared SPI bus
+TFT_SCLK (display)   GPIO12  OUT         SPI2
+TFT_CS (display)     GPIO10  OUT         SPI2
+TFT_DC (display)     GPIO9   OUT         GPIO
+TFT_RST (display)    GPIO8   OUT         GPIO
+TFT_BL (backlight)   GPIO7   OUT         PWM         Brightness control
+
+TOUCH_SDA             GPIO5   I/O         I2C0        CST816 capacitive touch
+TOUCH_SCL             GPIO6   OUT         I2C0
+TOUCH_INT             GPIO4   IN          GPIO        Interrupt, active low
+
+TC_MISO (thermo)      GPIO13  IN          SPI3        MAX31855 SPI bus
+TC_SCLK               GPIO14  OUT         SPI3
+TC_CS                  GPIO15  OUT         SPI3
+
+ADC_SDA (pressure)    GPIO17  I/O         I2C1        ADS1115
+ADC_SCL               GPIO18  OUT         I2C1
+
+FLOW_PULSE            GPIO16  IN          GPIO/ISR    Hall-effect, interrupt on rising edge
+
+SSR_CTRL              GPIO39  OUT         GPIO        Active HIGH = boiler on
+DIMMER_ZC             GPIO40  IN          GPIO/ISR    Zero-cross detect, interrupt
+DIMMER_GATE           GPIO41  OUT         GPIO        Triac gate trigger
+SOLENOID_CTRL         GPIO42  OUT         GPIO        Active HIGH = valve open
+
+BREW_SWITCH           GPIO2   IN          GPIO        Physical brew switch. HIGH = ON. Internal pull-down.
+STEAM_SWITCH          GPIO1   IN          GPIO        Physical steam switch. HIGH = ON. Internal pull-down.
+
+Electrical Levels
+─────────────────
+All GPIO: 3.3V logic
+SSR control: 3.3V logic input (SSR has internal optocoupler)
+Dimmer ZC: 3.3V output from optocoupler on dimmer board
+Dimmer gate: 3.3V logic (dimmer has gate driver)
+Sensor signals: 3.3V (ADS1115 and MAX31855 are 3.3V compatible)
+
+Power
+─────
+5V input from internal PSU &rarr; 3.3V LDO &rarr; ESP32-S3 + sensors
+Display: 3.3V logic, backlight PWM via GPIO (actual backlight power varies by module — check module schematic)
+Total current draw (est.): ~300mA @ 3.3V (ESP32 + WiFi + display + sensors)</code></pre>
+
+        <p><strong>Document location:</strong> <code>docs/icd-07-hardware-interface.md</code></p>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- ICD Summary -->
+      <!-- ================================================================ -->
+      <section class="section" id="icd-summary">
+        <h3>ICD Summary: What Community Members Need</h3>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Role</th><th>Needs These ICDs</th><th>Can Ignore</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Web app developer</strong></td><td>ICD-01 (REST/WS API), ICD-05 (Profile schema)</td><td>ICD-02, 03, 04, 06, 07</td></tr>
+              <tr><td><strong>iOS/Android app developer</strong></td><td>ICD-01, ICD-05</td><td>ICD-02, 03, 04, 06, 07</td></tr>
+              <tr><td><strong>Firmware: new feature</strong></td><td>ICD-02 (event bus), ICD-03 or 04 (HALs)</td><td>ICD-01 (unless adding API endpoints)</td></tr>
+              <tr><td><strong>Firmware: new scale driver</strong></td><td>ICD-06 (BLE scale interface)</td><td>Everything else</td></tr>
+              <tr><td><strong>Hardware: custom PCB</strong></td><td>ICD-07 (pin assignments), ICD-03/04 (HAL specs)</td><td>ICD-01, 02, 05</td></tr>
+              <tr><td><strong>Profile creator</strong></td><td>ICD-05 (Profile schema)</td><td>Everything else</td></tr>
+              <tr><td><strong>Home Assistant integrator</strong></td><td>ICD-01 (REST/WS API)</td><td>Everything else</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- Repository Structure -->
+      <!-- ================================================================ -->
+      <section class="section" id="repo-structure">
+        <h3>Proposed Repository Structure for Community</h3>
+
+        <div class="diagram-container">
+          <img src="diagrams/repo-structure.svg" alt="Repository structure: firmware/, webapp/, docs/, profiles/, hardware/ directories plus root files" loading="lazy">
+        </div>
+
+        <pre><code>gaggiuino/
+├── firmware/                  # ESP32-S3 firmware (PlatformIO)
+│   ├── src/
+│   ├── lib/
+│   ├── test/
+│   └── platformio.ini
+│
+├── webapp/                    # Web app (separate build, output &rarr; firmware/data/)
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.js         # (or svelte.config.js)
+│
+├── docs/
+│   ├── icd-01-rest-websocket-api.md
+│   ├── icd-02-internal-event-bus.md
+│   ├── icd-03-sensor-hal.md
+│   ├── icd-04-actuator-hal.md
+│   ├── icd-05-profile-schema.json
+│   ├── icd-06-ble-scale-driver.md
+│   ├── icd-07-hardware-interface.md
+│   ├── safety-fmea.md
+│   └── getting-started.md
+│
+├── profiles/                  # Community-shared profiles
+│   ├── classic-9-bar.json
+│   ├── turbo-blooming.json
+│   └── lungo-flow.json
+│
+├── hardware/                  # PCB designs (KiCad), enclosure STLs
+│   ├── pcb/
+│   └── enclosure/
+│
+├── DESIGN_DOCUMENT.md
+├── CONTRIBUTING.md
+└── LICENSE</code></pre>
+
+        <p><strong><code>docs/getting-started.md</code> must include:</strong> Assembly instructions with wiring diagrams, step-by-step build order, tools needed, and safety warnings. The BOM alone is not sufficient for a safe build. This is the most important document for new builders.</p>
+
+        <p><strong><code>CONTRIBUTING.md</code> must cover:</strong></p>
+        <ol>
+          <li><strong>Code style:</strong> C++ naming conventions, clang-format config, header guards vs <code>#pragma once</code></li>
+          <li><strong>Testing:</strong> How to run host-side unit tests, what coverage is expected for new code</li>
+          <li><strong>Safety-critical code review:</strong> Any PR touching files in <code>src/safety/</code>, <code>src/control/boiler.*</code>, <code>src/control/dimmer.*</code>, or <code>safety_limits.h</code> requires explicit review from a maintainer with embedded/safety experience. These files control mains-voltage actuators and cannot be merged casually.</li>
+          <li><strong>Adding a BLE scale driver:</strong> Step-by-step guide (create file, implement interface, register macro, test with real hardware, submit PR)</li>
+          <li><strong>Hardware changes:</strong> PCB or wiring changes require updated schematics and review for safety implications (earthing, creepage, thermal fuse path)</li>
+        </ol>
+      </section>
+
+      <!-- ================================================================ -->
+      <!-- PAGE FOOTER NAVIGATION -->
+      <!-- ================================================================ -->
+      <nav class="page-footer-nav" aria-label="Previous and next pages">
+        <a href="requirements.html" class="prev-page">
+          <span class="material-symbols-rounded icon-sm">arrow_back</span>
+          Requirements
+        </a>
+        <a href="decisions.html" class="next-page">
+          Decisions
+          <span class="material-symbols-rounded icon-sm">arrow_forward</span>
+        </a>
+      </nav>
+
+      <!-- ================================================================ -->
+      <!-- DOCUMENT FOOTER -->
+      <!-- ================================================================ -->
+      <footer class="doc-footer">
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
+      </footer>
+
+    </main>
+  </div>
+</body>
+</html>

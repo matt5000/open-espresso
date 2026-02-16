@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 260" width="800" height="260">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 12px; }
+    .title { font-size: 16px; font-weight: bold; fill: #0f172a; }
+    .label { font-size: 11px; fill: #64748b; }
+    .field { font-size: 13px; fill: #0f172a; }
+    .annotation { font-size: 11px; fill: #334155; }
+  </style>
+  <rect width="800" height="260" fill="#f8fafc" rx="4"/>
+
+  <text x="400" y="26" text-anchor="middle" class="title">Thermal Fuse Wiring -- Safety Layer 3 (Hardware)</text>
+
+  <!-- ====== Main wiring line ====== -->
+
+  <!-- Mains box -->
+  <rect x="40" y="52" width="100" height="40" rx="6" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="90" y="77" text-anchor="middle" class="field" font-weight="bold">Mains</text>
+  <text x="90" y="102" text-anchor="middle" class="label">230V / 120V AC</text>
+
+  <!-- Wire from Mains to Thermal Fuse -->
+  <line x1="140" y1="72" x2="210" y2="72" stroke="#334155" stroke-width="2.5"/>
+
+  <!-- Thermal Fuse (red safety box) -->
+  <rect x="210" y="48" width="180" height="48" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="2.5"/>
+  <text x="300" y="70" text-anchor="middle" fill="#dc2626" font-weight="bold" style="font-size:14px;">Thermal Fuse</text>
+  <text x="300" y="88" text-anchor="middle" fill="#dc2626" class="mono">190&#176;C / 374&#176;F</text>
+
+  <!-- Wire from Thermal Fuse to SSR -->
+  <line x1="390" y1="72" x2="460" y2="72" stroke="#334155" stroke-width="2.5"/>
+
+  <!-- SSR box -->
+  <rect x="460" y="52" width="100" height="40" rx="6" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="510" y="77" text-anchor="middle" class="field" font-weight="bold" fill="#1e40af">SSR</text>
+
+  <!-- Wire from SSR to Boiler Element -->
+  <line x1="560" y1="72" x2="630" y2="72" stroke="#334155" stroke-width="2.5"/>
+
+  <!-- Boiler Element box -->
+  <rect x="630" y="52" width="140" height="40" rx="6" fill="white" stroke="#334155" stroke-width="2"/>
+  <text x="700" y="77" text-anchor="middle" class="field" font-weight="bold">Boiler Element</text>
+
+  <!-- Direction arrows on wires -->
+  <polygon points="195,67 195,77 205,72" fill="#334155"/>
+  <polygon points="445,67 445,77 455,72" fill="#334155"/>
+  <polygon points="615,67 615,77 625,72" fill="#334155"/>
+
+  <!-- "SERIES" label -->
+  <text x="400" y="42" text-anchor="middle" class="label" font-weight="bold">WIRED IN SERIES</text>
+
+  <!-- ====== Annotation section ====== -->
+  <line x1="60" y1="122" x2="740" y2="122" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Bullet annotations -->
+  <circle cx="76" cy="146" r="3" fill="#dc2626"/>
+  <text x="88" y="150" class="annotation">Wired in SERIES with the boiler heating element -- current must pass through fuse to reach element</text>
+
+  <circle cx="76" cy="170" r="3" fill="#dc2626"/>
+  <text x="88" y="174" class="annotation">Opens permanently if boiler surface exceeds 190&#176;C -- one-time safety device, not resettable</text>
+
+  <circle cx="76" cy="194" r="3" fill="#dc2626"/>
+  <text x="88" y="198" class="annotation">Works even if: MCU is dead, software is buggy, SSR is stuck closed, thermocouple is disconnected</text>
+
+  <circle cx="76" cy="218" r="3" fill="#dc2626"/>
+  <text x="88" y="222" class="annotation">Install in upper thermostat slot on Gaggia Classic boiler (replaces the original brew thermostat)</text>
+
+  <!-- Safety emphasis -->
+  <rect x="60" y="236" width="680" height="18" rx="3" fill="none"/>
+  <text x="400" y="250" text-anchor="middle" class="label" font-weight="bold">This is the final hardware safety layer -- independent of all electronics and firmware</text>
+</svg>

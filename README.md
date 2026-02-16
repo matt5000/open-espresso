@@ -26,7 +26,8 @@ This project is inspired by [Gaggiuino](https://github.com/Zer0-bit/gaggiuino), 
 
 ## Documentation
 
-- [Design Document](docs/DESIGN_DOCUMENT.md) — full architecture, requirements, ICDs, test plan
+- [Design Document (HTML)](docs/DESIGN_DOCUMENT.html) — multi-page browsable version with SVG diagrams
+- [Design Document (Markdown)](docs/DESIGN_DOCUMENT.md) — canonical source, full architecture, requirements, ICDs, test plan
 - [Design Document Guidelines](docs/DESIGN_DOCUMENT_GUIDELINES.md) — how to write design docs (IEEE 1016/29148)
 
 ## Hardware Target

@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1300" font-family="'Courier New', monospace" font-size="12">
+  <title>Open Espresso — Wiring Changeover Guide (Stock → Modified)</title>
+  <style>
+    .wire { stroke: #333; stroke-width: 2; fill: none; }
+    .wire-live { stroke: #b33; stroke-width: 2.5; fill: none; }
+    .wire-neutral { stroke: #339; stroke-width: 2.5; fill: none; }
+    .wire-new { stroke: #2a7; stroke-width: 2.5; fill: none; }
+    .component { fill: #f8f8f0; stroke: #333; stroke-width: 1.5; }
+    .component-remove { fill: #ffe0e0; stroke: #c44; stroke-width: 2; }
+    .component-add { fill: #e0ffe0; stroke: #2a7; stroke-width: 2; }
+    .component-keep { fill: #f0f0ff; stroke: #66a; stroke-width: 1.5; }
+    .label { font-size: 11px; fill: #333; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-bold { font-size: 12px; fill: #333; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-small { font-size: 9px; fill: #666; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-step { font-size: 14px; fill: #fff; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-action { font-size: 11px; fill: #333; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .label-warning { font-size: 11px; fill: #b33; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .title { font-size: 18px; fill: #111; font-weight: bold; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .subtitle { font-size: 13px; fill: #555; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .step-circle { stroke: #333; stroke-width: 2; }
+    .step-remove { fill: #c44; }
+    .step-add { fill: #2a7; }
+    .step-adjust { fill: #d80; }
+    .step-verify { fill: #46a; }
+    .divider { stroke: #ccc; stroke-width: 1; }
+    .section-bg { rx: 6; }
+    .arrow { fill: #333; }
+  </style>
+
+  <rect width="1100" height="1300" fill="#fefefe"/>
+
+  <!-- Title -->
+  <text x="550" y="35" text-anchor="middle" class="title">Wiring Changeover Guide: Stock → Open Espresso</text>
+  <text x="550" y="55" text-anchor="middle" class="subtitle">Gaggia Classic (Pre-2015) — Step-by-step modification sequence</text>
+
+  <!-- Warning banner -->
+  <rect x="50" y="70" width="1000" height="50" rx="6" fill="#fff0f0" stroke="#c44" stroke-width="2"/>
+  <text x="550" y="92" text-anchor="middle" class="label-warning" font-size="13">DANGER: MAINS VOLTAGE (230V AC). Unplug machine and verify with multimeter before ANY work.</text>
+  <text x="550" y="108" text-anchor="middle" class="label-warning" font-size="13">Allow boiler to cool completely. Do not work on a hot machine.</text>
+
+  <!-- Legend -->
+  <rect x="50" y="130" width="1000" height="40" rx="4" fill="#fafafa" stroke="#ccc"/>
+  <circle cx="80" cy="150" r="10" class="step-remove"/>
+  <text x="80" y="154" text-anchor="middle" class="label-step" font-size="10">R</text>
+  <text x="96" y="154" class="label-small">REMOVE</text>
+  <circle cx="200" cy="150" r="10" class="step-add"/>
+  <text x="200" y="154" text-anchor="middle" class="label-step" font-size="10">A</text>
+  <text x="216" y="154" class="label-small">ADD / INSTALL</text>
+  <circle cx="350" cy="150" r="10" class="step-adjust"/>
+  <text x="350" y="154" text-anchor="middle" class="label-step" font-size="10">M</text>
+  <text x="366" y="154" class="label-small">MECHANICAL ADJ.</text>
+  <circle cx="520" cy="150" r="10" class="step-verify"/>
+  <text x="520" y="154" text-anchor="middle" class="label-step" font-size="10">V</text>
+  <text x="536" y="154" class="label-small">VERIFY / TEST</text>
+  <rect x="670" y="140" width="40" height="18" class="component-remove" rx="2"/>
+  <text x="716" y="154" class="label-small">Removed component</text>
+  <rect x="830" y="140" width="40" height="18" class="component-add" rx="2"/>
+  <text x="876" y="154" class="label-small">New component</text>
+
+  <!-- ==================== STEP 1: Remove Thermostats ==================== -->
+  <rect x="50" y="185" width="1000" height="160" class="section-bg" fill="#fff8f8" stroke="#ecc"/>
+  <circle cx="80" cy="210" r="14" class="step-remove"/>
+  <text x="80" y="215" text-anchor="middle" class="label-step">1</text>
+  <text x="105" y="215" class="label-bold">Remove both bimetal thermostats</text>
+
+  <!-- Before diagram -->
+  <text x="100" y="245" class="label-small">BEFORE (stock):</text>
+  <rect x="100" y="255" width="400" height="70" rx="4" fill="#fff" stroke="#ddd"/>
+  <!-- Stock wiring: L → brew thermo → steam thermo → boiler element → N -->
+  <text x="110" y="275" class="label-small">Switched L</text>
+  <line x1="170" y1="272" x2="195" y2="272" class="wire-live"/>
+  <rect x="195" y="260" width="80" height="25" class="component-remove" rx="3"/>
+  <text x="235" y="277" text-anchor="middle" class="label-small">Brew 107°C</text>
+  <line x1="275" y1="272" x2="295" y2="272" class="wire-live"/>
+  <rect x="295" y="260" width="80" height="25" class="component-remove" rx="3"/>
+  <text x="335" y="277" text-anchor="middle" class="label-small">Steam 145°C</text>
+  <line x1="375" y1="272" x2="400" y2="272" class="wire-live"/>
+  <rect x="400" y="260" width="60" height="25" rx="3" fill="#ffd6cc" stroke="#c44"/>
+  <text x="430" y="277" text-anchor="middle" class="label-small">Boiler</text>
+  <line x1="460" y1="272" x2="490" y2="272" class="wire-neutral"/>
+  <text x="492" y="275" class="label-small">N</text>
+
+  <text x="100" y="310" class="label-action">1a. Disconnect spade terminals from brew thermostat (left side of boiler, M4 thread)</text>
+  <text x="100" y="325" class="label-action">1b. Disconnect spade terminals from steam thermostat (top of boiler, M4 thread)</text>
+  <text x="100" y="340" class="label-action">1c. Unscrew both thermostats from boiler. Keep the M4 mounting holes clear for new sensors.</text>
+
+  <!-- ==================== STEP 2: Install Thermal Fuse ==================== -->
+  <rect x="50" y="355" width="1000" height="130" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="380" r="14" class="step-add"/>
+  <text x="80" y="385" text-anchor="middle" class="label-step">2</text>
+  <text x="105" y="385" class="label-bold">Install thermal fuse in upper thermostat slot (SAFETY-CRITICAL)</text>
+
+  <text x="100" y="410" class="label-action">2a. Apply thermal paste to the thermal fuse contact surface</text>
+  <text x="100" y="425" class="label-action">2b. Screw thermal fuse (184-192°C, 16A) into the UPPER thermostat slot (where steam thermo was)</text>
+  <text x="100" y="440" class="label-action">2c. Wire in SERIES on the boiler live path: Switched L → SSR → Thermal Fuse → Boiler Element</text>
+  <text x="100" y="455" class="label-warning">This fuse is the ONLY hardware over-temperature protection. Do not skip.</text>
+  <text x="100" y="470" class="label-action">2d. If using non-resettable fuse: keep a spare. It permanently opens if triggered.</text>
+
+  <!-- ==================== STEP 3: Install SSR ==================== -->
+  <rect x="50" y="495" width="1000" height="130" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="520" r="14" class="step-add"/>
+  <text x="80" y="525" text-anchor="middle" class="label-step">3</text>
+  <text x="105" y="525" class="label-bold">Install SSR (replaces thermostat temperature control)</text>
+
+  <!-- After diagram for boiler circuit -->
+  <text x="100" y="548" class="label-small">AFTER:</text>
+  <rect x="100" y="555" width="500" height="50" rx="4" fill="#fff" stroke="#ddd"/>
+  <text x="110" y="577" class="label-small">Switched L</text>
+  <line x1="170" y1="574" x2="195" y2="574" class="wire-live"/>
+  <rect x="195" y="562" width="70" height="25" class="component-add" rx="3"/>
+  <text x="230" y="579" text-anchor="middle" class="label-small">SSR 40A</text>
+  <line x1="265" y1="574" x2="285" y2="574" class="wire-live"/>
+  <rect x="285" y="562" width="90" height="25" class="component-add" rx="3" fill="#fff0f0" stroke="#c44"/>
+  <text x="330" y="579" text-anchor="middle" class="label-small">Therm. fuse</text>
+  <line x1="375" y1="574" x2="395" y2="574" class="wire-live"/>
+  <rect x="395" y="562" width="60" height="25" rx="3" fill="#ffd6cc" stroke="#c44"/>
+  <text x="425" y="579" text-anchor="middle" class="label-small">Boiler</text>
+  <line x1="455" y1="574" x2="490" y2="574" class="wire-neutral"/>
+  <text x="492" y="577" class="label-small">→ Boiler → N</text>
+
+  <text x="100" y="620" class="label-action">3a. Mount SSR near boiler wiring (use thermal pad if mounting on metal)</text>
+  <text x="100" y="635" class="label-action">3b. Connect SSR high-voltage side: Switched Live IN → SSR → Thermal Fuse → Boiler</text>
+
+  <!-- ==================== STEP 4: Install Thermocouple ==================== -->
+  <rect x="50" y="635" width="1000" height="90" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="660" r="14" class="step-add"/>
+  <text x="80" y="665" text-anchor="middle" class="label-step">4</text>
+  <text x="105" y="665" class="label-bold">Install K-type thermocouple in lower thermostat slot</text>
+
+  <text x="100" y="688" class="label-action">4a. Apply thermal paste to thermocouple probe tip</text>
+  <text x="100" y="703" class="label-action">4b. Screw M4 thermocouple into the LOWER thermostat slot (where brew thermo was)</text>
+  <text x="100" y="718" class="label-action">4c. Route 2-wire cable to rear panel cable gland (keep away from mains wiring)</text>
+
+  <!-- ==================== STEP 5: Install Dimmer + Pump ==================== -->
+  <rect x="50" y="735" width="1000" height="115" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="760" r="14" class="step-add"/>
+  <text x="80" y="765" text-anchor="middle" class="label-step">5</text>
+  <text x="105" y="765" class="label-bold">Install AC dimmer module in series with pump</text>
+
+  <text x="100" y="790" class="label-small">AFTER:</text>
+  <rect x="100" y="798" width="450" height="35" rx="4" fill="#fff" stroke="#ddd"/>
+  <text x="110" y="820" class="label-small">Brew SW</text>
+  <line x1="160" y1="817" x2="180" y2="817" class="wire-live"/>
+  <rect x="180" y="805" width="80" height="25" class="component-add" rx="3"/>
+  <text x="220" y="822" text-anchor="middle" class="label-small">Dimmer</text>
+  <line x1="260" y1="817" x2="280" y2="817" class="wire-live"/>
+  <rect x="280" y="805" width="75" height="25" class="component-keep" rx="3"/>
+  <text x="318" y="822" text-anchor="middle" class="label-small">Ulka EP5</text>
+  <line x1="355" y1="817" x2="370" y2="817" class="wire"/>
+  <rect x="370" y="805" width="80" height="25" class="component-add" rx="3"/>
+  <text x="410" y="822" text-anchor="middle" class="label-small">Flow sensor</text>
+  <line x1="450" y1="817" x2="470" y2="817" class="wire-neutral"/>
+  <text x="475" y="820" class="label-small">N</text>
+
+  <text x="100" y="845" class="label-action">5a. Wire dimmer AC input from brew switch output (where pump live was connected)</text>
+  <text x="100" y="858" class="label-action">5b. Wire dimmer AC output to pump live input. Add EMI filter + snubber per BOM.</text>
+
+  <!-- ==================== STEP 6: Pressure Tap ==================== -->
+  <rect x="50" y="860" width="1000" height="80" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="885" r="14" class="step-add"/>
+  <text x="80" y="890" text-anchor="middle" class="label-step">6</text>
+  <text x="105" y="890" class="label-bold">Install pressure transducer via T-fitting</text>
+
+  <text x="100" y="912" class="label-action">6a. Install T-fitting (1/8" BSP) between boiler output and group head</text>
+  <text x="100" y="927" class="label-action">6b. Connect pressure transducer (0-1.2 MPa) to T-fitting with PTFE tubing</text>
+  <text x="100" y="942" class="label-action">6c. Route 3-wire signal cable to rear panel cable gland</text>
+
+  <!-- ==================== STEP 7: Flow Sensor ==================== -->
+  <rect x="50" y="950" width="1000" height="70" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="975" r="14" class="step-add"/>
+  <text x="80" y="980" text-anchor="middle" class="label-step">7</text>
+  <text x="105" y="980" class="label-bold">Install flow sensor inline with pump output</text>
+
+  <text x="100" y="1002" class="label-action">7a. Cut pump output tubing. Insert hall-effect flow sensor inline (before boiler)</text>
+  <text x="100" y="1017" class="label-action">7b. Route 3-wire signal cable to rear panel cable gland</text>
+
+  <!-- ==================== STEP 8: PSU ==================== -->
+  <rect x="50" y="1030" width="1000" height="70" class="section-bg" fill="#f8fff8" stroke="#cec"/>
+  <circle cx="80" cy="1055" r="14" class="step-add"/>
+  <text x="80" y="1060" text-anchor="middle" class="label-step">8</text>
+  <text x="105" y="1060" class="label-bold">Install 5V power supply module</text>
+
+  <text x="100" y="1082" class="label-action">8a. Connect Hi-Link PSU AC input to switched live + neutral (after power switch)</text>
+  <text x="100" y="1097" class="label-action">8b. Route 5V DC output (2-wire) through rear panel cable gland to external enclosure</text>
+
+  <!-- ==================== STEP 9: OPV Adjustment ==================== -->
+  <rect x="50" y="1110" width="1000" height="70" class="section-bg" fill="#fff8f0" stroke="#ec9"/>
+  <circle cx="80" cy="1135" r="14" class="step-adjust"/>
+  <text x="80" y="1140" text-anchor="middle" class="label-step">9</text>
+  <text x="105" y="1140" class="label-bold">Adjust OPV from ~12 bar to ~9 bar (mechanical)</text>
+
+  <text x="100" y="1162" class="label-action">9a. Locate OPV set screw (flathead, inside the valve body)</text>
+  <text x="100" y="1177" class="label-action">9b. Turn counterclockwise to reduce pressure. Verify with portafilter pressure gauge.</text>
+  <text x="100" y="1192" class="label-warning">Essential for pressure profiling. Without this, pump always pushes 12+ bar.</text>
+
+  <!-- ==================== STEP 10: Verify ==================== -->
+  <rect x="50" y="1200" width="1000" height="90" class="section-bg" fill="#f0f0ff" stroke="#aac"/>
+  <circle cx="80" cy="1225" r="14" class="step-verify"/>
+  <text x="80" y="1230" text-anchor="middle" class="label-step">10</text>
+  <text x="105" y="1230" class="label-bold">Verify all connections before powering on</text>
+
+  <text x="100" y="1252" class="label-action">10a. Continuity check: Earth pin to chassis (must be &lt; 0.1Ω)</text>
+  <text x="100" y="1267" class="label-action">10b. Verify no short between L and N, L and E, N and E</text>
+  <text x="100" y="1282" class="label-action">10c. Verify SSR, dimmer, solenoid control wires are on the LOW-VOLTAGE side (3.3V logic)</text>
+  <text x="100" y="1297" class="label-warning">10d. Verify thermal fuse is in series with boiler element (open the fuse = boiler must not heat)</text>
+
+</svg>

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 680" width="620" height="680">
+  <style>
+    text { font-family: 'Source Sans 3', sans-serif; }
+    .mono { font-family: 'Source Code Pro', monospace; font-size: 11px; }
+    .dir { font-size: 12px; fill: #1e40af; font-weight: bold; }
+    .file { font-size: 11px; fill: #0f172a; }
+    .desc { font-size: 10px; fill: #64748b; }
+  </style>
+  <rect width="620" height="680" fill="#f8fafc" rx="4"/>
+  <text x="310" y="26" text-anchor="middle" fill="#0f172a" font-size="16" font-weight="bold">Module Decomposition (src/)</text>
+  <!-- Root -->
+  <rect x="20" y="42" width="80" height="28" rx="5" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <text x="60" y="61" text-anchor="middle" class="mono dir">src/</text>
+  <!-- Trunk -->
+  <line x1="40" y1="70" x2="40" y2="660" stroke="#64748b" stroke-width="1.5"/>
+
+  <!-- main.cpp -->
+  <circle cx="40" cy="85" r="3" fill="#64748b"/>
+  <line x1="40" y1="85" x2="60" y2="85" stroke="#64748b" stroke-width="1"/>
+  <text x="70" y="89" class="mono file">main.cpp</text>
+  <text x="200" y="89" class="desc">App entry, task creation</text>
+
+  <!-- control/ -->
+  <circle cx="40" cy="110" r="3" fill="#64748b"/>
+  <line x1="40" y1="110" x2="60" y2="110" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="60" y="97" width="110" height="26" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="115" y="115" text-anchor="middle" class="mono dir">control/</text>
+  <line x1="115" y1="123" x2="115" y2="210" stroke="#64748b" stroke-width="1"/>
+  <line x1="115" y1="133" x2="135" y2="133" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="137" class="mono file">control_task.h/cpp</text>
+  <text x="335" y="137" class="desc">Main real-time control loop</text>
+  <line x1="115" y1="151" x2="135" y2="151" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="155" class="mono file">pid.h/cpp</text>
+  <text x="335" y="155" class="desc">PID controller (pure math)</text>
+  <line x1="115" y1="169" x2="135" y2="169" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="173" class="mono file">dimmer.h/cpp</text>
+  <text x="335" y="173" class="desc">Zero-cross phase-angle dimmer</text>
+  <line x1="115" y1="187" x2="135" y2="187" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="191" class="mono file">boiler.h/cpp</text>
+  <text x="335" y="191" class="desc">SSR control with safety limits</text>
+  <line x1="115" y1="205" x2="135" y2="205" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="209" class="mono file">state_machine.h/cpp</text>
+  <text x="335" y="209" class="desc">Brew/steam/idle/flush states</text>
+
+  <!-- sensors/ -->
+  <circle cx="40" cy="235" r="3" fill="#64748b"/>
+  <line x1="40" y1="235" x2="60" y2="235" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="60" y="222" width="110" height="26" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="115" y="240" text-anchor="middle" class="mono dir">sensors/</text>
+  <line x1="115" y1="248" x2="115" y2="318" stroke="#64748b" stroke-width="1"/>
+  <line x1="115" y1="258" x2="135" y2="258" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="262" class="mono file">sensor_manager.h/cpp</text>
+  <text x="335" y="262" class="desc">Unified sensor reading interface</text>
+  <line x1="115" y1="276" x2="135" y2="276" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="280" class="mono file">thermocouple.h/cpp</text>
+  <text x="335" y="280" class="desc">MAX31855 driver</text>
+  <line x1="115" y1="294" x2="135" y2="294" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="298" class="mono file">pressure.h/cpp</text>
+  <text x="335" y="298" class="desc">ADS1115-based transducer</text>
+  <line x1="115" y1="312" x2="135" y2="312" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="316" class="mono file">flow.h/cpp</text>
+  <text x="335" y="316" class="desc">Hall-effect flow sensor (ISR)</text>
+
+  <!-- profile/ -->
+  <circle cx="40" cy="345" r="3" fill="#64748b"/>
+  <line x1="40" y1="345" x2="60" y2="345" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="60" y="332" width="110" height="26" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="115" y="350" text-anchor="middle" class="mono dir">profile/</text>
+  <line x1="115" y1="358" x2="115" y2="410" stroke="#64748b" stroke-width="1"/>
+  <line x1="115" y1="368" x2="135" y2="368" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="372" class="mono file">profile.h/cpp</text>
+  <text x="335" y="372" class="desc">Profile data structures</text>
+  <line x1="115" y1="386" x2="135" y2="386" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="390" class="mono file">phase_profiler.h/cpp</text>
+  <text x="335" y="390" class="desc">Phase engine (pure logic)</text>
+  <line x1="115" y1="404" x2="135" y2="404" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="408" class="mono file">predictive_weight.h/cpp</text>
+  <text x="335" y="408" class="desc">Weight estimation (pure logic)</text>
+
+  <!-- ui/ -->
+  <circle cx="40" cy="435" r="3" fill="#64748b"/>
+  <line x1="40" y1="435" x2="60" y2="435" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="60" y="422" width="110" height="26" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="115" y="440" text-anchor="middle" class="mono dir">ui/</text>
+  <line x1="115" y1="448" x2="115" y2="500" stroke="#64748b" stroke-width="1"/>
+  <line x1="115" y1="458" x2="135" y2="458" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="462" class="mono file">display.h/cpp</text>
+  <text x="335" y="462" class="desc">Status display driver (OLED/TFT)</text>
+  <line x1="115" y1="476" x2="135" y2="476" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="480" class="mono file">web_server.h/cpp</text>
+  <text x="335" y="480" class="desc">HTTP server + static file serving</text>
+  <line x1="115" y1="494" x2="135" y2="494" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="498" class="mono file">websocket.h/cpp</text>
+  <text x="335" y="498" class="desc">Real-time shot data streaming</text>
+
+  <!-- connectivity/ -->
+  <circle cx="40" cy="525" r="3" fill="#64748b"/>
+  <line x1="40" y1="525" x2="60" y2="525" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="60" y="512" width="130" height="26" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="125" y="530" text-anchor="middle" class="mono dir">connectivity/</text>
+  <line x1="125" y1="538" x2="125" y2="590" stroke="#64748b" stroke-width="1"/>
+  <line x1="125" y1="548" x2="145" y2="548" stroke="#64748b" stroke-width="1"/>
+  <text x="155" y="552" class="mono file">ble_scales.h/cpp</text>
+  <text x="335" y="552" class="desc">BLE scale abstraction</text>
+  <line x1="125" y1="566" x2="145" y2="566" stroke="#64748b" stroke-width="1"/>
+  <text x="155" y="570" class="mono file">wifi_manager.h/cpp</text>
+  <text x="335" y="570" class="desc">WiFi connection management</text>
+  <line x1="125" y1="584" x2="145" y2="584" stroke="#64748b" stroke-width="1"/>
+  <text x="155" y="588" class="mono file">ota.h/cpp</text>
+  <text x="335" y="588" class="desc">Over-the-air firmware updates</text>
+
+  <!-- config/ -->
+  <circle cx="40" cy="615" r="3" fill="#64748b"/>
+  <line x1="40" y1="615" x2="60" y2="615" stroke="#64748b" stroke-width="1.5"/>
+  <rect x="60" y="602" width="110" height="26" rx="4" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="115" y="620" text-anchor="middle" class="mono dir">config/</text>
+  <line x1="115" y1="628" x2="115" y2="665" stroke="#64748b" stroke-width="1"/>
+  <line x1="115" y1="638" x2="135" y2="638" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="642" class="mono file">config.h/cpp</text>
+  <text x="335" y="642" class="desc">Configuration schema (typed)</text>
+  <line x1="115" y1="656" x2="135" y2="656" stroke="#64748b" stroke-width="1"/>
+  <text x="145" y="660" class="mono file">storage.h/cpp, migration.h/cpp</text>
+</svg>
