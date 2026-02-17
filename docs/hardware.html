@@ -60,7 +60,7 @@
         <h2>7. Future State: Hardware Evaluation</h2>
 
         <!-- Option A -->
-        <h3 id="option-a">Option A: Single MCU &mdash; ESP32-S3 (Recommended)</h3>
+        <h3 id="option-a">Option A: Single MCU — ESP32-S3 (Recommended)</h3>
 
         <div class="diagram-container">
           <img src="diagrams/esp32-s3-single-mcu.svg" alt="ESP32-S3 single MCU architecture with Core 0 for real-time control and Core 1 for application tasks, plus peripheral grid" loading="lazy">
@@ -98,7 +98,7 @@
           <li>Real-time guarantees weaker than STM32 (WiFi interrupts can preempt)</li>
           <li>Must carefully pin Core 0 for real-time tasks and Core 1 for networking</li>
           <li>Analog peripherals are weaker than STM32 (still need external ADC)</li>
-          <li>Single point of failure &mdash; if the MCU crashes, everything stops</li>
+          <li>Single point of failure — if the MCU crashes, everything stops</li>
         </ul>
 
         <h4>Mitigation for Real-Time Concerns</h4>
@@ -146,7 +146,7 @@
         <!-- Option D -->
         <h3 id="option-d">Option D: ESP32-P4 + ESP32-C6 (Future Upgrade Path)</h3>
 
-        <p>The ESP32-P4 is Espressif's HMI-oriented SoC: dual-core RISC-V at 400 MHz, MIPI-DSI display interface (up to 1080p), hardware H.264 encoder, up to 32 MB PSRAM. No built-in WiFi/BLE &mdash; requires a companion ESP32-C6 or C5 for wireless.</p>
+        <p>The ESP32-P4 is Espressif's HMI-oriented SoC: dual-core RISC-V at 400 MHz, MIPI-DSI display interface (up to 1080p), hardware H.264 encoder, up to 32 MB PSRAM. No built-in WiFi/BLE — requires a companion ESP32-C6 or C5 for wireless.</p>
         <p>Waveshare sells ready-made dev boards with 7/8/10.1" IPS capacitive touchscreens and ESP32-C6 integrated.</p>
 
         <h4>Pros</h4>
@@ -160,7 +160,7 @@
         <ul>
           <li>Still dual-chip (P4 + C6), though on the same PCB module</li>
           <li>Requires custom enclosure to mount 7"+ display on Gaggia Classic</li>
-          <li>~$40&ndash;80 for board + display vs ~$8 for ESP32-S3 + TFT</li>
+          <li>~$40–80 for board + display vs ~$8 for ESP32-S3 + TFT</li>
           <li>ESP32-P4 ecosystem is newer and less battle-tested</li>
           <li>Overkill for PID + pump control</li>
         </ul>
@@ -195,9 +195,9 @@
         <div class="decision-box">
           <div class="decision-title">
             <span class="material-symbols-rounded">check_circle</span>
-            Decision: Option A &mdash; ESP32-S3 Single MCU
+            Decision: Option A — ESP32-S3 Single MCU
           </div>
-          <p><strong>Option A (ESP32-S3 single MCU) is the recommended starting point for evaluation.</strong> The Gaggia Classic control requirements (PID at 50&ndash;100 Hz, zero-cross dimmer, sensor polling) are well within the ESP32-S3's capabilities when using proper RTOS task pinning. The elimination of the UART protocol removes an entire class of bugs. A hardware watchdog timer addresses the single-point-of-failure concern.</p>
+          <p><strong>Option A (ESP32-S3 single MCU) is the recommended starting point for evaluation.</strong> The Gaggia Classic control requirements (PID at 50–100 Hz, zero-cross dimmer, sensor polling) are well within the ESP32-S3's capabilities when using proper RTOS task pinning. The elimination of the UART protocol removes an entire class of bugs. A hardware watchdog timer addresses the single-point-of-failure concern.</p>
           <p>If evaluation reveals that WiFi/BLE activity causes unacceptable jitter in PID or dimmer timing, fall back to Option B. If a premium display is desired later, evaluate Option D (ESP32-P4).</p>
         </div>
       </section>
@@ -234,7 +234,7 @@
         <!-- Machine Specifications -->
         <h3 id="machine-specifications">Machine Specifications</h3>
 
-        <p>The pre-2015 Gaggia Classic (sold until ~2014&ndash;2016 depending on region, before the "New Classic" / "Classic Pro" redesign):</p>
+        <p>The pre-2015 Gaggia Classic (sold until ~2014–2016 depending on region, before the "New Classic" / "Classic Pro" redesign):</p>
 
         <div class="table-wrapper">
           <table>
@@ -271,15 +271,15 @@
               </tr>
               <tr>
                 <td><strong>Voltage</strong></td>
-                <td>120 V (US) / 220&ndash;240 V (EU/UK/AU)</td>
+                <td>120 V (US) / 220–240 V (EU/UK/AU)</td>
               </tr>
               <tr>
                 <td><strong>Brew thermostat</strong></td>
-                <td>Stock: 107 &deg;C bimetal thermostat (removed for Gaggiuino)</td>
+                <td>Stock: 107 °C bimetal thermostat (removed for Gaggiuino)</td>
               </tr>
               <tr>
                 <td><strong>Steam thermostat</strong></td>
-                <td>Stock: 145 &deg;C bimetal thermostat (removed for Gaggiuino)</td>
+                <td>Stock: 145 °C bimetal thermostat (removed for Gaggiuino)</td>
               </tr>
               <tr>
                 <td><strong>Water reservoir</strong></td>
@@ -295,11 +295,11 @@
         <p>For the Gaggiuino mod, the following stock components are replaced or augmented:</p>
 
         <ol>
-          <li><strong>Thermostats removed</strong> &mdash; Both brew and steam thermostats are replaced by the thermocouple + SSR combination. The SSR is wired in place of the brew thermostat.</li>
-          <li><strong>Pump control</strong> &mdash; The dimmer module is wired in series with the pump. The stock pump switch still functions as a master enable.</li>
-          <li><strong>Pressure tap</strong> &mdash; A T-fitting is added to the boiler output (between the boiler and the group head) for the pressure transducer.</li>
-          <li><strong>Flow sensor</strong> &mdash; Inline with the pump output, before the boiler.</li>
-          <li><strong>Three-way solenoid</strong> &mdash; Stock solenoid is retained. Gaggiuino can optionally control it for automated backflushing, but the stock manual operation also works.</li>
+          <li><strong>Thermostats removed</strong> — Both brew and steam thermostats are replaced by the thermocouple + SSR combination. The SSR is wired in place of the brew thermostat.</li>
+          <li><strong>Pump control</strong> — The dimmer module is wired in series with the pump. The stock pump switch still functions as a master enable.</li>
+          <li><strong>Pressure tap</strong> — A T-fitting is added to the boiler output (between the boiler and the group head) for the pressure transducer.</li>
+          <li><strong>Flow sensor</strong> — Inline with the pump output, before the boiler.</li>
+          <li><strong>Three-way solenoid</strong> — Stock solenoid is retained. Gaggiuino can optionally control it for automated backflushing, but the stock manual operation also works.</li>
         </ol>
 
         <h4>Thermal Fuse Wiring</h4>
@@ -319,7 +319,7 @@
 
         <p>For the 2016 Gaggia Classic specifically:</p>
         <ul>
-          <li><strong>EU model (220&ndash;240 V):</strong> Dimmer and SSR must be rated for mains voltage. The triac in the dimmer sees full mains.</li>
+          <li><strong>EU model (220–240 V):</strong> Dimmer and SSR must be rated for mains voltage. The triac in the dimmer sees full mains.</li>
           <li><strong>US model (120 V):</strong> Same dimmer circuit works but current draw is higher for the same power. Triac and SSR current ratings matter more.</li>
           <li><strong>The OPV should be adjusted to ~9 bar</strong> (stock is ~12 bar). This is a mechanical adjustment, not firmware-controlled, but it is essential for proper pressure profiling. Without it, the pump will always push 12+ bar and the dimmer has to fight the OPV.</li>
         </ul>
@@ -349,7 +349,7 @@
                 <td><strong>MCU (control)</strong></td>
                 <td>STM32F411CE "Blackpill"</td>
                 <td>ESP32-S3-WROOM-1 (or WROVER)</td>
-                <td><span class="tag tag-amber">Replace</span> &mdash; single MCU does both</td>
+                <td><span class="tag tag-amber">Replace</span> — single MCU does both</td>
               </tr>
               <tr>
                 <td><strong>MCU (UI/network)</strong></td>
@@ -359,7 +359,7 @@
               </tr>
               <tr>
                 <td><strong>Display</strong></td>
-                <td>Nextion 2.4&ndash;4.3" UART</td>
+                <td>Nextion 2.4–4.3" UART</td>
                 <td>ILI9341 2.8" SPI TFT</td>
                 <td><span class="tag tag-amber">Replace</span></td>
               </tr>
@@ -371,7 +371,7 @@
               </tr>
               <tr>
                 <td><strong>Pressure sensor</strong></td>
-                <td>0&ndash;1.2 MPa transducer + ADS1115 (I2C)</td>
+                <td>0–1.2 MPa transducer + ADS1115 (I2C)</td>
                 <td>Same transducer + ADS1115 (I2C)</td>
                 <td><span class="tag tag-green">Keep</span> (evaluate ADS1220)</td>
               </tr>
@@ -441,7 +441,7 @@
           <li>STM32F411CE module (~$5)</li>
           <li>UART level shifter (if any)</li>
           <li>Inter-MCU wiring (4+ wires)</li>
-          <li>Nextion display + cable (~$15&ndash;40)</li>
+          <li>Nextion display + cable (~$15–40)</li>
           <li>Complexity of two firmware images</li>
         </ul>
 
@@ -462,7 +462,7 @@
               <tr>
                 <td>ESP32-S3-WROOM-1 (N16R8)</td>
                 <td>1</td>
-                <td>$3&ndash;4</td>
+                <td>$3–4</td>
                 <td>16 MB flash, 8 MB PSRAM. WROVER if ext. antenna needed</td>
               </tr>
               <tr>
@@ -490,46 +490,46 @@
                 <td>Screws into boiler thermostat hole</td>
               </tr>
               <tr>
-                <td>Pressure transducer (0&ndash;1.2 MPa)</td>
+                <td>Pressure transducer (0–1.2 MPa)</td>
                 <td>1</td>
-                <td>$8&ndash;12</td>
-                <td>XDB401 or equivalent, 0.5&ndash;4.5 V output</td>
+                <td>$8–12</td>
+                <td>XDB401 or equivalent, 0.5–4.5 V output</td>
               </tr>
               <tr>
                 <td>Flow sensor (hall-effect)</td>
                 <td>1</td>
-                <td>$5&ndash;8</td>
+                <td>$5–8</td>
                 <td>Inline, pulse output</td>
               </tr>
               <tr>
                 <td>SSR (40 A)</td>
                 <td>1</td>
-                <td>$4&ndash;6</td>
+                <td>$4–6</td>
                 <td>For boiler heating element</td>
               </tr>
               <tr>
-                <td><strong>Thermal fuse (184&ndash;192 &deg;C, 16 A)</strong></td>
+                <td><strong>Thermal fuse (184–192 °C, 16 A)</strong></td>
                 <td>1</td>
-                <td>$1&ndash;3</td>
+                <td>$1–3</td>
                 <td><strong>SAFETY-CRITICAL.</strong> In series with boiler element. M4 mount in upper thermostat slot. [R06]</td>
               </tr>
               <tr>
                 <td>AC dimmer module</td>
                 <td>1</td>
-                <td>$4&ndash;6</td>
+                <td>$4–6</td>
                 <td>Zero-cross + triac (RobotDyn or equivalent)</td>
               </tr>
               <tr>
                 <td>EMI filter (AC line)</td>
                 <td>1</td>
-                <td>$2&ndash;3</td>
+                <td>$2–3</td>
                 <td>LC filter on dimmer AC input. Reduces conducted emissions from phase-angle switching.</td>
               </tr>
               <tr>
                 <td>5 V power supply (derating)</td>
                 <td>1</td>
-                <td>$2&ndash;3</td>
-                <td>Hi-Link HLK-PM01 or equivalent, AC&rarr;5 V</td>
+                <td>$2–3</td>
+                <td>Hi-Link HLK-PM01 or equivalent, AC→5 V</td>
               </tr>
               <tr>
                 <td>3.3 V LDO regulator</td>
@@ -538,13 +538,13 @@
                 <td>AMS1117-3.3 or similar, from 5 V rail</td>
               </tr>
               <tr>
-                <td>Pull-down resistors (10 k&Omega;)</td>
+                <td>Pull-down resistors (10 kΩ)</td>
                 <td>3</td>
                 <td>$0.10</td>
                 <td>On SSR, dimmer gate, solenoid GPIOs. Ensures safe state on MCU reset.</td>
               </tr>
               <tr>
-                <td>Snubber (RC, 100 &Omega; + 100 nF)</td>
+                <td>Snubber (RC, 100 Ω + 100 nF)</td>
                 <td>1</td>
                 <td>$0.50</td>
                 <td>Across dimmer triac. Reduces EMI and protects triac from inductive spikes.</td>
@@ -552,12 +552,12 @@
               <tr>
                 <td>External enclosure</td>
                 <td>1</td>
-                <td>$5&ndash;15</td>
+                <td>$5–15</td>
                 <td>IP54+ rated, or 3D-printed PETG with gasket</td>
               </tr>
               <tr>
                 <td>Cable glands (PG7/PG9)</td>
-                <td>4&ndash;6</td>
+                <td>4–6</td>
                 <td>$3</td>
                 <td>Waterproof cable pass-throughs for enclosure</td>
               </tr>
@@ -581,7 +581,7 @@
               </tr>
               <tr>
                 <td>Wire (silicone, various gauge)</td>
-                <td>&mdash;</td>
+                <td>—</td>
                 <td>$5</td>
                 <td>High-temp silicone insulation for inside machine</td>
               </tr>
@@ -590,7 +590,7 @@
               <tr>
                 <td><strong>Total estimated</strong></td>
                 <td></td>
-                <td><strong>~$65&ndash;90</strong></td>
+                <td><strong>~$65–90</strong></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -603,14 +603,14 @@
         <p>These components <strong>must</strong> remain inside the Gaggia chassis because they connect directly to the boiler, pump, or plumbing:</p>
 
         <ol>
-          <li><strong>Thermal fuse (190 &deg;C)</strong> &mdash; in series with boiler element, in upper thermostat slot. <strong>SAFETY-CRITICAL.</strong></li>
-          <li><strong>K-type thermocouple</strong> &mdash; screwed into the lower boiler thermostat hole</li>
-          <li><strong>SSR</strong> &mdash; switches mains AC to the heating element (mounts near boiler wiring)</li>
-          <li><strong>Dimmer module + EMI filter + snubber</strong> &mdash; wired in series with the pump (near pump wiring)</li>
-          <li><strong>Pressure transducer</strong> &mdash; connected to plumbing via T-fitting</li>
-          <li><strong>Flow sensor</strong> &mdash; inline with pump output tubing</li>
-          <li><strong>Solenoid relay</strong> (if used) &mdash; switches the 3-way valve</li>
-          <li><strong>Power supply module</strong> &mdash; converts mains AC to 5 V DC</li>
+          <li><strong>Thermal fuse (190 °C)</strong> — in series with boiler element, in upper thermostat slot. <strong>SAFETY-CRITICAL.</strong></li>
+          <li><strong>K-type thermocouple</strong> — screwed into the lower boiler thermostat hole</li>
+          <li><strong>SSR</strong> — switches mains AC to the heating element (mounts near boiler wiring)</li>
+          <li><strong>Dimmer module + EMI filter + snubber</strong> — wired in series with the pump (near pump wiring)</li>
+          <li><strong>Pressure transducer</strong> — connected to plumbing via T-fitting</li>
+          <li><strong>Flow sensor</strong> — inline with pump output tubing</li>
+          <li><strong>Solenoid relay</strong> (if used) — switches the 3-way valve</li>
+          <li><strong>Power supply module</strong> — converts mains AC to 5 V DC</li>
         </ol>
 
         <p>These are either plumbing-connected, high-voltage, or both. They're also robust components (sealed transducer, potted SSR, etc.) that tolerate humidity better than bare PCBs.</p>
@@ -621,10 +621,10 @@
         <p>All sensitive low-voltage electronics:</p>
 
         <ol>
-          <li><strong>ESP32-S3 MCU</strong> &mdash; the brain</li>
-          <li><strong>TFT display</strong> &mdash; user interface</li>
-          <li><strong>ADS1115 ADC</strong> &mdash; analog-to-digital converter for pressure</li>
-          <li><strong>MAX31855</strong> &mdash; thermocouple interface IC</li>
+          <li><strong>ESP32-S3 MCU</strong> — the brain</li>
+          <li><strong>TFT display</strong> — user interface</li>
+          <li><strong>ADS1115 ADC</strong> — analog-to-digital converter for pressure</li>
+          <li><strong>MAX31855</strong> — thermocouple interface IC</li>
           <li><strong>Any capacitors, pull-ups, or signal conditioning</strong> on the sensor lines</li>
         </ol>
       </section>
@@ -641,9 +641,9 @@
         <p>Inside the Gaggia Classic:</p>
         <ul>
           <li>Steam and water vapor from the boiler, group head, and drip tray</li>
-          <li>Heat radiation from the boiler (~100&ndash;165 &deg;C surface temperature)</li>
+          <li>Heat radiation from the boiler (~100–165 °C surface temperature)</li>
           <li>Potential drips from the water tank area and plumbing fittings</li>
-          <li>Cramped space (~230 mm &times; 240 mm footprint, most occupied by boiler + pump)</li>
+          <li>Cramped space (~230 mm × 240 mm footprint, most occupied by boiler + pump)</li>
           <li>High-voltage AC wiring running alongside low-voltage signal wires</li>
         </ul>
 
@@ -733,8 +733,8 @@
 
         <p>Attach the enclosure to the rear panel of the Gaggia Classic using:</p>
         <ul>
-          <li><strong>Magnets</strong> &mdash; The Gaggia Classic chassis is steel/stainless. Strong neodymium magnets (N52, 10 mm &times; 3 mm) on the enclosure grip the rear panel. No drilling required. Removable for maintenance.</li>
-          <li><strong>VHB tape</strong> &mdash; 3M VHB double-sided tape as a backup/supplement to magnets. Withstands vibration from the pump.</li>
+          <li><strong>Magnets</strong> — The Gaggia Classic chassis is steel/stainless. Strong neodymium magnets (N52, 10 mm × 3 mm) on the enclosure grip the rear panel. No drilling required. Removable for maintenance.</li>
+          <li><strong>VHB tape</strong> — 3M VHB double-sided tape as a backup/supplement to magnets. Withstands vibration from the pump.</li>
         </ul>
 
         <p>The rear panel is the best location because:</p>
@@ -781,7 +781,7 @@
               </tr>
               <tr>
                 <td><strong>Dimensions</strong></td>
-                <td>~120 mm &times; 80 mm &times; 45 mm (fits ESP32 dev board + TFT + breakouts)</td>
+                <td>~120 mm × 80 mm × 45 mm (fits ESP32 dev board + TFT + breakouts)</td>
               </tr>
               <tr>
                 <td><strong>IP rating</strong></td>
@@ -797,11 +797,11 @@
               </tr>
               <tr>
                 <td><strong>Mounting</strong></td>
-                <td>Neodymium magnets (4&times; N52 10 mm &times; 3 mm) recessed into enclosure</td>
+                <td>Neodymium magnets (4× N52 10 mm × 3 mm) recessed into enclosure</td>
               </tr>
               <tr>
                 <td><strong>Ventilation</strong></td>
-                <td>None needed &mdash; ESP32-S3 dissipates &lt;1 W. Sealed is better.</td>
+                <td>None needed — ESP32-S3 dissipates &lt;1 W. Sealed is better.</td>
               </tr>
               <tr>
                 <td><strong>Access</strong></td>
@@ -844,12 +844,12 @@
 
         <h4>Key Points</h4>
         <ul>
-          <li>The <strong>SSR</strong> is potted/sealed &mdash; moisture tolerant. Mount it near the boiler wiring with thermal pad if needed.</li>
+          <li>The <strong>SSR</strong> is potted/sealed — moisture tolerant. Mount it near the boiler wiring with thermal pad if needed.</li>
           <li>The <strong>dimmer module</strong> is near the pump wiring. These modules are typically conformal-coated or potted.</li>
-          <li>The <strong>pressure transducer</strong> is a sealed industrial sensor &mdash; waterproof by design.</li>
-          <li>The <strong>flow sensor</strong> is an inline plumbing component &mdash; waterproof by design.</li>
-          <li>The <strong>thermocouple</strong> is a sealed probe &mdash; waterproof by design.</li>
-          <li>The <strong>5 V PSU</strong> (Hi-Link or similar) is a potted module &mdash; moisture tolerant.</li>
+          <li>The <strong>pressure transducer</strong> is a sealed industrial sensor — waterproof by design.</li>
+          <li>The <strong>flow sensor</strong> is an inline plumbing component — waterproof by design.</li>
+          <li>The <strong>thermocouple</strong> is a sealed probe — waterproof by design.</li>
+          <li>The <strong>5 V PSU</strong> (Hi-Link or similar) is a potted module — moisture tolerant.</li>
           <li><strong>No bare PCBs or exposed ICs remain inside the machine.</strong></li>
         </ul>
 
@@ -925,8 +925,8 @@
       <!-- DOCUMENT FOOTER -->
       <!-- ================================================================ -->
       <footer class="doc-footer">
-        <p><em>Document version: 3.0 &mdash; Updated: 2026-02-16</em></p>
-        <p><em>Project: Open Espresso &mdash; open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
         <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
       </footer>
 

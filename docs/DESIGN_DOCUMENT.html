@@ -86,11 +86,11 @@
         <ol>
           <li>User turns on the Gaggia Classic (mains switch). PSU powers the ESP32.</li>
           <li>Firmware boots in &lt; 5 seconds. TFT shows temperature, heating progress.</li>
-          <li>PID heats boiler to brew setpoint (93 &deg;C default). WiFi connects asynchronously.</li>
+          <li>PID heats boiler to brew setpoint (93 °C default). WiFi connects asynchronously.</li>
           <li>TFT shows "Ready." User selects a profile (or uses the last active one).</li>
           <li>User loads portafilter, places cup on scale (BLE connects automatically).</li>
           <li>User flips brew switch. Shot starts. TFT shows live pressure/flow graph.</li>
-          <li>Profile engine runs phases: pre-infusion &rarr; ramp &rarr; hold.</li>
+          <li>Profile engine runs phases: pre-infusion → ramp → hold.</li>
           <li>Shot stops automatically on weight target (36 g). Pump off, solenoid opens.</li>
           <li>User removes cup. System returns to IDLE.</li>
           <li>Optional: user opens web app on phone to review shot data, tweak profile.</li>
@@ -137,7 +137,7 @@
               <tr>
                 <td><strong>Hardware builder</strong></td>
                 <td>BOM, pin assignments, wiring, safety, enclosure</td>
-                <td><a href="safety.html#section-10">10 (safety)</a>, <a href="hardware.html#section-13">13&ndash;15 (HW)</a>, <a href="interfaces.html#icd-07">20 ICD-07</a></td>
+                <td><a href="safety.html#section-10">10 (safety)</a>, <a href="hardware.html#section-13">13–15 (HW)</a>, <a href="interfaces.html#icd-07">20 ICD-07</a></td>
               </tr>
             </tbody>
           </table>
@@ -245,7 +245,7 @@
               </tr>
               <tr>
                 <td><strong>ILI9341</strong></td>
-                <td>TFT LCD controller IC (Ilitek), SPI interface, drives the 2.8" 320&times;240 display</td>
+                <td>TFT LCD controller IC (Ilitek), SPI interface, drives the 2.8" 320×240 display</td>
               </tr>
               <tr>
                 <td><strong>ISR</strong></td>
@@ -301,7 +301,7 @@
               </tr>
               <tr>
                 <td><strong>SIL</strong></td>
-                <td>Safety Integrity Level — IEC 61508 classification of safety function reliability (SIL 1&ndash;4)</td>
+                <td>Safety Integrity Level — IEC 61508 classification of safety function reliability (SIL 1–4)</td>
               </tr>
               <tr>
                 <td><strong>SPI</strong></td>
@@ -457,7 +457,7 @@
       <nav class="toc" id="toc">
         <h2>Table of Contents</h2>
 
-        <p class="intro-paragraph"><strong>How to read this document:</strong> Sections 1&ndash;6 analyze the current (legacy) architecture. Sections 7&ndash;15 define the future state design (hardware, software, safety, UI). Section 16 contains formal requirements, section 17 is the FMEA, section 18 is the test plan. Section 19 is the standards gap analysis. Section 20 defines all interface contracts (APIs, HALs, schemas). Section 21 tracks decisions and open questions.</p>
+        <p class="intro-paragraph"><strong>How to read this document:</strong> Sections 1–6 analyze the current (legacy) architecture. Sections 7–15 define the future state design (hardware, software, safety, UI). Section 16 contains formal requirements, section 17 is the FMEA, section 18 is the test plan. Section 19 is the standards gap analysis. Section 20 defines all interface contracts (APIs, HALs, schemas). Section 21 tracks decisions and open questions.</p>
 
         <h3>Current State Analysis</h3>
         <ol>

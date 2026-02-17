@@ -95,7 +95,7 @@
               </tr>
               <tr>
                 <td><strong>Layer 3: Passive Hardware</strong></td>
-                <td>Thermal fuse (190 &deg;C), over-pressure valve (OPV)</td>
+                <td>Thermal fuse (190 °C), over-pressure valve (OPV)</td>
                 <td>Works with NO software, NO power to MCU, NO electronics at all</td>
                 <td>Purely passive. Operates on physics alone.</td>
               </tr>
@@ -120,7 +120,7 @@
           <img src="diagrams/thermal-fuse-wiring.svg" alt="Thermal fuse wiring: mains power to 190 degrees C thermal fuse to SSR to boiler element, wired in series. Opens permanently if boiler surface exceeds 190 degrees C." loading="lazy">
         </div>
 
-        <p>The thermal fuse is wired <strong>in series</strong> with the boiler heating element. It opens permanently if the boiler surface exceeds 190 &deg;C. This works even if:</p>
+        <p>The thermal fuse is wired <strong>in series</strong> with the boiler heating element. It opens permanently if the boiler surface exceeds 190 °C. This works even if:</p>
         <ul>
           <li>The MCU is dead</li>
           <li>The software has a bug</li>
@@ -141,10 +141,10 @@
             </thead>
             <tbody>
               <tr><td><strong>Type</strong></td><td>Non-resettable thermal fuse (Microtemp / Cantherm / Aupo) OR resettable bimetal thermostat</td></tr>
-              <tr><td><strong>Temperature rating</strong></td><td>184&ndash;192 &deg;C (above max steam temp of 165 &deg;C, below aluminum damage threshold)</td></tr>
-              <tr><td><strong>Current rating</strong></td><td>&ge; 16 A at 250 VAC (must handle full boiler element current)</td></tr>
+              <tr><td><strong>Temperature rating</strong></td><td>184–192 °C (above max steam temp of 165 °C, below aluminum damage threshold)</td></tr>
+              <tr><td><strong>Current rating</strong></td><td>≥ 16 A at 250 VAC (must handle full boiler element current)</td></tr>
               <tr><td><strong>Mounting</strong></td><td>M4 thread into boiler thermostat slot, with thermal paste</td></tr>
-              <tr><td><strong>Cost</strong></td><td>$1&ndash;3</td></tr>
+              <tr><td><strong>Cost</strong></td><td>$1–3</td></tr>
             </tbody>
           </table>
         </div>
@@ -152,7 +152,7 @@
         <div class="callout callout-info">
           <span class="material-symbols-rounded">info</span>
           <div>
-            <strong>Alternative:</strong> A resettable bimetal thermostat (KSD301, 180 &deg;C NC) can be used instead. It resets automatically when temperature drops. The non-resettable thermal fuse is safer (forces investigation after a fault) but requires replacement after tripping.
+            <strong>Alternative:</strong> A resettable bimetal thermostat (KSD301, 180 °C NC) can be used instead. It resets automatically when temperature drops. The non-resettable thermal fuse is safer (forces investigation after a fault) but requires replacement after tripping.
           </div>
         </div>
 
@@ -170,7 +170,7 @@
         <ul>
           <li><strong>Feed interval:</strong> ControlTask must feed the watchdog every 100 ms</li>
           <li><strong>Timeout:</strong> 500 ms (tolerates up to 5 missed feeds before reset, providing margin for transient delays without reducing safety)</li>
-          <li><strong>On timeout:</strong> Hardware reset &mdash; all outputs go to safe state</li>
+          <li><strong>On timeout:</strong> Hardware reset — all outputs go to safe state</li>
           <li><strong>GPIO behavior on reset:</strong> All GPIO outputs default to OFF (SSR off, pump off, solenoid off)</li>
         </ul>
 
@@ -197,27 +197,27 @@
                 <td>Immediately disable boiler SSR. Enter FAULT state.</td>
               </tr>
               <tr>
-                <td><strong>Thermocouple reads &gt; 170 &deg;C</strong></td>
+                <td><strong>Thermocouple reads > 170 °C</strong></td>
                 <td>Temperature threshold</td>
                 <td>Immediately disable boiler SSR. Enter FAULT state.</td>
               </tr>
               <tr>
-                <td><strong>Pressure sensor reads &gt; 15 bar</strong></td>
+                <td><strong>Pressure sensor reads > 15 bar</strong></td>
                 <td>Pressure threshold</td>
                 <td>Immediately stop pump. Open solenoid. Enter FAULT state.</td>
               </tr>
               <tr>
-                <td><strong>Pressure sensor reads &lt; &minus;0.5 bar</strong></td>
+                <td><strong>Pressure sensor reads &lt; −0.5 bar</strong></td>
                 <td>Sensor disconnected</td>
                 <td>Warning only (can still operate).</td>
               </tr>
               <tr>
-                <td><strong>No sensor readings for &gt; 200 ms</strong></td>
+                <td><strong>No sensor readings for > 200 ms</strong></td>
                 <td>Timeout</td>
                 <td>Disable all outputs. Enter FAULT state.</td>
               </tr>
               <tr>
-                <td><strong>Boiler on for &gt; 20 min continuous</strong></td>
+                <td><strong>Boiler on for > 20 min continuous</strong></td>
                 <td>Time limit</td>
                 <td>Disable boiler SSR. Require manual reset.</td>
               </tr>
@@ -264,19 +264,19 @@
               <tr>
                 <td><code>GPIO39</code></td>
                 <td>SSR control</td>
-                <td>High-impedance &mdash; SSR input sees no drive</td>
+                <td>High-impedance — SSR input sees no drive</td>
                 <td><strong>SSR OFF</strong> (safe)</td>
               </tr>
               <tr>
                 <td><code>GPIO41</code></td>
                 <td>Dimmer gate</td>
-                <td>High-impedance &mdash; triac gate not triggered</td>
+                <td>High-impedance — triac gate not triggered</td>
                 <td><strong>Pump OFF</strong> (safe)</td>
               </tr>
               <tr>
                 <td><code>GPIO42</code></td>
                 <td>Solenoid control</td>
-                <td>High-impedance &mdash; relay not energized</td>
+                <td>High-impedance — relay not energized</td>
                 <td><strong>Valve closed</strong> (safe)</td>
               </tr>
             </tbody>
@@ -286,7 +286,7 @@
         <div class="callout callout-warning">
           <span class="material-symbols-rounded">engineering</span>
           <div>
-            <strong>Verification required:</strong> The SSR and dimmer modules must be confirmed to have <strong>pull-down resistors</strong> or internal logic that defaults to OFF when the control input is floating. If not, external 10 k&Omega; pull-down resistors must be added to GPIO39, GPIO41, and GPIO42 to guarantee safe state on reset.
+            <strong>Verification required:</strong> The SSR and dimmer modules must be confirmed to have <strong>pull-down resistors</strong> or internal logic that defaults to OFF when the control input is floating. If not, external 10 kΩ pull-down resistors must be added to GPIO39, GPIO41, and GPIO42 to guarantee safe state on reset.
           </div>
         </div>
 
@@ -308,10 +308,10 @@ void safetyGpioInit() {
         <!-- ============================================================ -->
         <h3 id="protective-earthing">Protective Earthing</h3>
 
-        <p>The Gaggia Classic chassis is a <strong>Class I appliance</strong> &mdash; it relies on protective earth (ground) for safety. All of the following must be maintained during the Open Espresso modification:</p>
+        <p>The Gaggia Classic chassis is a <strong>Class I appliance</strong> — it relies on protective earth (ground) for safety. All of the following must be maintained during the Open Espresso modification:</p>
 
         <ol>
-          <li><strong>Chassis ground:</strong> The mains earth wire must have a secure metal-to-metal connection to the chassis via a ring terminal and bolt. Verify with a multimeter (&lt; 0.1 &Omega; between earth pin and chassis).</li>
+          <li><strong>Chassis ground:</strong> The mains earth wire must have a secure metal-to-metal connection to the chassis via a ring terminal and bolt. Verify with a multimeter (&lt; 0.1 Ω between earth pin and chassis).</li>
           <li><strong>SSR heatsink:</strong> If the SSR is mounted on a metal heatsink, the heatsink must either be earthed or insulated from the chassis.</li>
           <li><strong>External enclosure:</strong> If the enclosure is metal, it must be bonded to chassis earth. If plastic (ABS/PETG), no earthing needed.</li>
           <li><strong>No interruption:</strong> The Open Espresso modification must not interrupt or degrade the existing earth path. Never disconnect or reroute the factory earth wire.</li>
@@ -344,12 +344,12 @@ void safetyGpioInit() {
               <tr>
                 <td><strong>HEATING</strong></td>
                 <td>SSR = PID</td>
-                <td>Temperature below setpoint &minus; 2 &deg;C. Actively heating. Not ready to brew.</td>
+                <td>Temperature below setpoint − 2 °C. Actively heating. Not ready to brew.</td>
               </tr>
               <tr>
                 <td><strong>READY</strong></td>
                 <td>SSR = PID</td>
-                <td>Temperature at or above setpoint &minus; 1 &deg;C. Ready for brew, steam, flush, or descale.</td>
+                <td>Temperature at or above setpoint − 1 °C. Ready for brew, steam, flush, or descale.</td>
               </tr>
               <tr>
                 <td><strong>BREWING</strong></td>
@@ -402,19 +402,19 @@ void safetyGpioInit() {
                 <td>IDLE</td>
                 <td>HEATING</td>
                 <td>Boot / temp drops</td>
-                <td><code>temp &lt; setpoint - 2&deg;C</code></td>
+                <td><code>temp &lt; setpoint - 2°C</code></td>
               </tr>
               <tr>
                 <td>HEATING</td>
                 <td>READY</td>
                 <td>Temp reached</td>
-                <td><code>temp &ge; setpoint - 1&deg;C</code> (hysteresis)</td>
+                <td><code>temp ≥ setpoint - 1°C</code> (hysteresis)</td>
               </tr>
               <tr>
                 <td>READY</td>
                 <td>BREWING</td>
                 <td>Brew switch ON</td>
-                <td><code>temp &ge; setpoint - 2&deg;C AND no active fault</code></td>
+                <td><code>temp ≥ setpoint - 2°C AND no active fault</code></td>
               </tr>
               <tr>
                 <td>READY</td>
@@ -513,18 +513,18 @@ constexpr uint32_t STUCK_SSR_DETECT_MS             = 3000;    // check 3s after 
             <tbody>
               <tr>
                 <td><code>MAX_BOILER_TEMP_C</code></td>
-                <td>170.0 &deg;C</td>
-                <td>Above max steam temp (165 &deg;C), well below thermal fuse trip point (190 &deg;C) and aluminum damage threshold. Provides 20 &deg;C margin for Layer 3 to act.</td>
+                <td>170.0 °C</td>
+                <td>Above max steam temp (165 °C), well below thermal fuse trip point (190 °C) and aluminum damage threshold. Provides 20 °C margin for Layer 3 to act.</td>
               </tr>
               <tr>
                 <td><code>MAX_BREW_PRESSURE_BAR</code></td>
                 <td>13.0 bar</td>
-                <td>Above any reasonable brewing pressure (max ~12 bar for turbo shots), below the mechanical OPV setting. Standard espresso operates at 6&ndash;9 bar.</td>
+                <td>Above any reasonable brewing pressure (max ~12 bar for turbo shots), below the mechanical OPV setting. Standard espresso operates at 6–9 bar.</td>
               </tr>
               <tr>
                 <td><code>MAX_STEAM_TEMP_C</code></td>
-                <td>165.0 &deg;C</td>
-                <td>Standard steam temperature ceiling. Above typical steam setpoint of 155 &deg;C, below Layer 1 cutoff at 170 &deg;C.</td>
+                <td>165.0 °C</td>
+                <td>Standard steam temperature ceiling. Above typical steam setpoint of 155 °C, below Layer 1 cutoff at 170 °C.</td>
               </tr>
               <tr>
                 <td><code>MAX_CONTINUOUS_HEAT_MS</code></td>
@@ -548,8 +548,8 @@ constexpr uint32_t STUCK_SSR_DETECT_MS             = 3000;    // check 3s after 
               </tr>
               <tr>
                 <td><code>STUCK_SSR_TEMP_RISE_THRESHOLD</code></td>
-                <td>5.0 &deg;C</td>
-                <td>If temperature rises by 5 &deg;C after the SSR is commanded off, the SSR is likely stuck closed (welded contacts). Triggers FAULT state.</td>
+                <td>5.0 °C</td>
+                <td>If temperature rises by 5 °C after the SSR is commanded off, the SSR is likely stuck closed (welded contacts). Triggers FAULT state.</td>
               </tr>
               <tr>
                 <td><code>STUCK_SSR_DETECT_MS</code></td>
@@ -574,7 +574,7 @@ constexpr uint32_t STUCK_SSR_DETECT_MS             = 3000;    // check 3s after 
         <!-- ============================================================ -->
         <h3 id="profile-data-model">Profile Data Model</h3>
 
-        <p>A profile is a named sequence of 1&ndash;10 phases, each controlling either pressure or flow, with per-phase stop conditions and a global stop condition set that applies across all phases.</p>
+        <p>A profile is a named sequence of 1–10 phases, each controlling either pressure or flow, with per-phase stop conditions and a global stop condition set that applies across all phases.</p>
 
         <pre><code>Profile
 ├── name: string (max 32 chars)
@@ -618,17 +618,17 @@ constexpr uint32_t STUCK_SSR_DETECT_MS             = 3000;    // check 3s after 
               <tr>
                 <td><code>phases</code></td>
                 <td><code>Phase[]</code></td>
-                <td>Ordered array of 1&ndash;10 phases. Executed sequentially. Each phase runs until one of its stop conditions is met, then advances to the next phase.</td>
+                <td>Ordered array of 1–10 phases. Executed sequentially. Each phase runs until one of its stop conditions is met, then advances to the next phase.</td>
               </tr>
               <tr>
                 <td><code>type</code></td>
                 <td><code>enum</code></td>
-                <td><code>PRESSURE</code> &mdash; control pump to achieve target pressure. <code>FLOW</code> &mdash; control pump to achieve target flow rate.</td>
+                <td><code>PRESSURE</code> — control pump to achieve target pressure. <code>FLOW</code> — control pump to achieve target flow rate.</td>
               </tr>
               <tr>
                 <td><code>target.start</code></td>
                 <td><code>float</code></td>
-                <td>Starting value for the transition. Defaults to 0. Use <code>-1</code> for &ldquo;from current value&rdquo; to allow smooth transitions between phases without jumps.</td>
+                <td>Starting value for the transition. Defaults to 0. Use <code>-1</code> for "from current value" to allow smooth transitions between phases without jumps.</td>
               </tr>
               <tr>
                 <td><code>target.end</code></td>
@@ -658,7 +658,7 @@ constexpr uint32_t STUCK_SSR_DETECT_MS             = 3000;    // check 3s after 
               <tr>
                 <td><code>temperature_target</code></td>
                 <td><code>float</code></td>
-                <td>Per-phase boiler temperature setpoint in &deg;C. Allows temperature profiling across phases (e.g., declining temperature shot).</td>
+                <td>Per-phase boiler temperature setpoint in °C. Allows temperature profiling across phases (e.g., declining temperature shot).</td>
               </tr>
               <tr>
                 <td><code>global_stop_conditions</code></td>
@@ -736,7 +736,7 @@ float computePhaseTarget(const Phase&amp; phase, uint32_t elapsed_ms) {
     }
 
     // Compute normalized time, clamped to [0, 1]
-    float t = static_cast&lt;float&gt;(elapsed_ms) / static_cast&lt;float&gt;(phase.target.duration_ms);
+    float t = static_cast&lt;float>(elapsed_ms) / static_cast&lt;float>(phase.target.duration_ms);
     if (t > 1.0f) t = 1.0f;
 
     // Apply the selected curve function
@@ -774,19 +774,19 @@ float computePhaseTarget(const Phase&amp; phase, uint32_t elapsed_ms) {
               </tr>
               <tr>
                 <td><code>EASE_IN</code></td>
-                <td><code>f(t) = t&sup2;</code></td>
+                <td><code>f(t) = t²</code></td>
                 <td>Slow start, accelerating</td>
                 <td>Gentle ramp-up to extraction pressure</td>
               </tr>
               <tr>
                 <td><code>EASE_OUT</code></td>
-                <td><code>f(t) = 1 - (1 - t)&sup2;</code></td>
+                <td><code>f(t) = 1 - (1 - t)²</code></td>
                 <td>Fast start, decelerating</td>
                 <td>Quick initial build, gentle settle</td>
               </tr>
               <tr>
                 <td><code>EASE_IN_OUT</code></td>
-                <td><code>piecewise t&sup2;</code></td>
+                <td><code>piecewise t²</code></td>
                 <td>Slow start, fast middle, slow end</td>
                 <td>Smooth, natural-feeling transitions</td>
               </tr>
@@ -799,25 +799,25 @@ float computePhaseTarget(const Phase&amp; phase, uint32_t elapsed_ms) {
         <!-- ============================================================ -->
         <h3 id="stop-conditions">Stop Condition Evaluation</h3>
 
-        <p>Stop conditions are evaluated on every control loop tick. <strong>Per-phase</strong> conditions advance to the next phase. <strong>Global</strong> conditions end the entire shot. Within a set of conditions, they are combined with OR logic &mdash; the first condition met triggers the stop.</p>
+        <p>Stop conditions are evaluated on every control loop tick. <strong>Per-phase</strong> conditions advance to the next phase. <strong>Global</strong> conditions end the entire shot. Within a set of conditions, they are combined with OR logic — the first condition met triggers the stop.</p>
 
         <pre><code>// Evaluated every control loop tick (~10 ms)
 bool checkPhaseStopConditions(const Phase&amp; phase, const ShotState&amp; state) {
     const auto&amp; sc = phase.stop_conditions;
 
-    if (sc.time_ms &gt; 0 &amp;&amp; state.phase_elapsed_ms &gt;= (uint32_t)sc.time_ms)
+    if (sc.time_ms > 0 &amp;&amp; state.phase_elapsed_ms >= (uint32_t)sc.time_ms)
         return true;
-    if (sc.pressure_above &gt; 0.0f &amp;&amp; state.pressure_bar &gt;= sc.pressure_above)
+    if (sc.pressure_above > 0.0f &amp;&amp; state.pressure_bar >= sc.pressure_above)
         return true;
-    if (sc.pressure_below &gt; 0.0f &amp;&amp; state.pressure_bar &lt;= sc.pressure_below)
+    if (sc.pressure_below > 0.0f &amp;&amp; state.pressure_bar &lt;= sc.pressure_below)
         return true;
-    if (sc.flow_above &gt; 0.0f &amp;&amp; state.flow_ml_s &gt;= sc.flow_above)
+    if (sc.flow_above > 0.0f &amp;&amp; state.flow_ml_s >= sc.flow_above)
         return true;
-    if (sc.flow_below &gt; 0.0f &amp;&amp; state.flow_ml_s &lt;= sc.flow_below)
+    if (sc.flow_below > 0.0f &amp;&amp; state.flow_ml_s &lt;= sc.flow_below)
         return true;
-    if (sc.weight_g &gt; 0.0f &amp;&amp; state.weight_g &gt;= sc.weight_g)
+    if (sc.weight_g > 0.0f &amp;&amp; state.weight_g >= sc.weight_g)
         return true;
-    if (sc.water_pumped_ml &gt; 0.0f &amp;&amp; state.water_pumped_ml &gt;= sc.water_pumped_ml)
+    if (sc.water_pumped_ml > 0.0f &amp;&amp; state.water_pumped_ml >= sc.water_pumped_ml)
         return true;
 
     return false;
@@ -826,11 +826,11 @@ bool checkPhaseStopConditions(const Phase&amp; phase, const ShotState&amp; state
 bool checkGlobalStopConditions(const Profile&amp; profile, const ShotState&amp; state) {
     const auto&amp; gsc = profile.global_stop_conditions;
 
-    if (gsc.time_ms &gt; 0 &amp;&amp; state.shot_elapsed_ms &gt;= (uint32_t)gsc.time_ms)
+    if (gsc.time_ms > 0 &amp;&amp; state.shot_elapsed_ms >= (uint32_t)gsc.time_ms)
         return true;
-    if (gsc.weight_g &gt; 0.0f &amp;&amp; state.weight_g &gt;= gsc.weight_g)
+    if (gsc.weight_g > 0.0f &amp;&amp; state.weight_g >= gsc.weight_g)
         return true;
-    if (gsc.water_pumped_ml &gt; 0.0f &amp;&amp; state.water_pumped_ml &gt;= gsc.water_pumped_ml)
+    if (gsc.water_pumped_ml > 0.0f &amp;&amp; state.water_pumped_ml >= gsc.water_pumped_ml)
         return true;
 
     return false;
@@ -962,20 +962,20 @@ bool checkGlobalStopConditions(const Profile&amp; profile, const ShotState&amp; 
               <tr>
                 <td><strong>0: Pre-infusion</strong></td>
                 <td>PRESSURE</td>
-                <td>0 &rarr; 3.0 bar</td>
+                <td>0 → 3.0 bar</td>
                 <td>LINEAR</td>
                 <td>5,000 ms</td>
-                <td>Time &ge; 8,000 ms OR pressure &ge; 3.0 bar</td>
-                <td>93.0 &deg;C</td>
+                <td>Time ≥ 8,000 ms OR pressure ≥ 3.0 bar</td>
+                <td>93.0 °C</td>
               </tr>
               <tr>
                 <td><strong>1: Main extraction</strong></td>
                 <td>PRESSURE</td>
-                <td>0 &rarr; 9.0 bar</td>
+                <td>0 → 9.0 bar</td>
                 <td>EASE_IN</td>
                 <td>3,000 ms</td>
                 <td>None (relies on global conditions)</td>
-                <td>93.0 &deg;C</td>
+                <td>93.0 °C</td>
               </tr>
             </tbody>
           </table>
@@ -986,7 +986,7 @@ bool checkGlobalStopConditions(const Profile&amp; profile, const ShotState&amp; 
         <div class="callout callout-info">
           <span class="material-symbols-rounded">lightbulb</span>
           <div>
-            <strong>Smooth transitions:</strong> The <code>target.start</code> field is optional (defaults to 0). Use <code>-1</code> for &ldquo;from current value&rdquo; to allow smooth transitions between phases without jumps. This is particularly useful for pressure decline profiles where Phase 2 should begin from wherever Phase 1 ended.
+            <strong>Smooth transitions:</strong> The <code>target.start</code> field is optional (defaults to 0). Use <code>-1</code> for "from current value" to allow smooth transitions between phases without jumps. This is particularly useful for pressure decline profiles where Phase 2 should begin from wherever Phase 1 ended.
           </div>
         </div>
 
@@ -1015,7 +1015,7 @@ void ProfileEngine::tick(const SensorReading&amp; sensors, uint32_t now_ms) {
     if (checkPhaseStopConditions(current, shotState_)) {
         // Advance to next phase, or end if no more phases
         current_phase_++;
-        if (current_phase_ &gt;= profile_.phases.size()) {
+        if (current_phase_ >= profile_.phases.size()) {
             endShot(StopReason::LAST_PHASE_COMPLETE);
             return;
         }
@@ -1027,15 +1027,15 @@ void ProfileEngine::tick(const SensorReading&amp; sensors, uint32_t now_ms) {
     float target = computePhaseTarget(current, phase_elapsed);
 
     // 4. Apply cross-domain restriction
-    if (current.restriction &gt; 0.0f) {
+    if (current.restriction > 0.0f) {
         if (current.type == PhaseType::PRESSURE) {
             // Limit flow rate while targeting pressure
-            if (sensors.flow_ml_s &gt; current.restriction) {
+            if (sensors.flow_ml_s > current.restriction) {
                 target = reducePressureToLimitFlow(target, sensors, current.restriction);
             }
         } else {
             // Limit pressure while targeting flow
-            if (sensors.pressure_bar &gt; current.restriction) {
+            if (sensors.pressure_bar > current.restriction) {
                 target = reduceFlowToLimitPressure(target, sensors, current.restriction);
             }
         }
@@ -1049,7 +1049,7 @@ void ProfileEngine::tick(const SensorReading&amp; sensors, uint32_t now_ms) {
     }
 
     // 6. Update temperature setpoint if phase specifies one
-    if (current.temperature_target &gt; 0.0f) {
+    if (current.temperature_target > 0.0f) {
         boilerController_.setTargetTemp(current.temperature_target);
     }
 
@@ -1071,11 +1071,11 @@ void ProfileEngine::tick(const SensorReading&amp; sensors, uint32_t now_ms) {
         <p>Profiles are stored as human-readable JSON files on the LittleFS filesystem partition of the ESP32-S3 flash. This provides several advantages over the legacy EEPROM binary blob approach:</p>
 
         <ul>
-          <li><strong>JSON in LittleFS</strong> &mdash; not binary blobs. Human-readable and editable.</li>
+          <li><strong>JSON in LittleFS</strong> — not binary blobs. Human-readable and editable.</li>
           <li><strong>Validated on load</strong> against a JSON Schema (see ICD-05). Invalid profiles are rejected with clear error messages.</li>
           <li><strong>Up to 20 profiles</strong> stored simultaneously. LittleFS has significantly more space than the legacy EEPROM approach.</li>
-          <li><strong>Export/import via web UI</strong> &mdash; profiles can be downloaded as JSON files and shared with other users.</li>
-          <li><strong>Default profiles shipped with firmware</strong> &mdash; includes Classic 9 Bar, Turbo, Blooming, and other common recipes.</li>
+          <li><strong>Export/import via web UI</strong> — profiles can be downloaded as JSON files and shared with other users.</li>
+          <li><strong>Default profiles shipped with firmware</strong> — includes Classic 9 Bar, Turbo, Blooming, and other common recipes.</li>
         </ul>
 
         <pre><code>// Profile filesystem layout in LittleFS
