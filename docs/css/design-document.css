@@ -103,6 +103,7 @@ html {
     scroll-behavior: auto;
   }
 
+  /* Override component-level animation specificity for a11y */
   *,
   *::before,
   *::after {
@@ -822,7 +823,7 @@ picture {
     padding: 0;
   }
 
-  /* Hide interactive elements */
+  /* Override component specificity to suppress UI in print */
   nav,
   .skip-link,
   button,

@@ -12,7 +12,7 @@ source code yet.
 
 ## Repository Structure
 
-```
+```text
 open-espresso/
   CLAUDE.md                      This file
   README.md                      Project overview
