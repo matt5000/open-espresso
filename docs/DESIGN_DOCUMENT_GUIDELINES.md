@@ -453,6 +453,27 @@ Use this before declaring a design document complete:
 - [ ] Traceability matrix present: requirement → design module → test
 - [ ] All requirement statuses tracked (proposed, approved, implemented, verified)
 
+### Google Style Guide Compliance
+- [ ] HTML uses 2-space indentation
+- [ ] HTML uses UTF-8 characters directly (not entity references
+      like `&mdash;`); exceptions: `&amp;` and `&lt;`
+- [ ] HTML has no inline `style` attributes (use CSS classes)
+- [ ] HTML omits `type` attributes on `<link>` and `<script>`
+- [ ] All `<img>` elements have descriptive `alt` attributes
+- [ ] CSS uses 2-space indentation (not 4-space)
+- [ ] CSS has no single-line rule blocks (expand all rules)
+- [ ] CSS uses shorthand hex where possible (`#fff` not `#ffffff`)
+- [ ] CSS uses single quotes for string values
+- [ ] CSS has one selector per line, one declaration per line
+- [ ] No `#id` selectors in CSS (use classes or attribute selectors)
+- [ ] Markdown uses ATX-style headings (`#`, `##`)
+- [ ] Markdown wraps lines at 80 characters where practical
+- [ ] Markdown fenced code blocks declare a language identifier
+- [ ] Markdown has blank lines before and after headings
+
+See `CLAUDE.md` at the repository root for the full list of
+applicable Google style guides and specific rules.
+
 ---
 
 *Based on IEEE 1016-2009 and IEEE 29148-2018. Refined through the Gaggiuino design document (v3.0, 2026-02-16).*

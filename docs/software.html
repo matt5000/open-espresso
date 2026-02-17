@@ -76,7 +76,7 @@
 
         <!-- 8.2 Why This Approach -->
         <h3 id="why-this-approach">Why This Approach</h3>
-        <p>This is a home-only machine on a stable WiFi network, so connectivity is not a concern. The key uncertainty is whether a 2.8" TFT is enough at the machine, or whether a phone/web UI is sufficient on its own. Starting with both &mdash; cheap TFT + web app &mdash; lets us find out.</p>
+        <p>This is a home-only machine on a stable WiFi network, so connectivity is not a concern. The key uncertainty is whether a 2.8" TFT is enough at the machine, or whether a phone/web UI is sufficient on its own. Starting with both — cheap TFT + web app — lets us find out.</p>
         <p><strong>Total display hardware cost: ~$5</strong></p>
 
         <!-- 8.3 Machine-Mounted Display -->
@@ -89,9 +89,9 @@
             </thead>
             <tbody>
               <tr><td><strong>Controller</strong></td><td>ILI9341</td></tr>
-              <tr><td><strong>Resolution</strong></td><td>320&times;240 (QVGA)</td></tr>
+              <tr><td><strong>Resolution</strong></td><td>320×240 (QVGA)</td></tr>
               <tr><td><strong>Size</strong></td><td>2.8" diagonal</td></tr>
-              <tr><td><strong>Interface</strong></td><td>SPI (ESP32-S3 supports up to 80 MHz; ILI9341 typically runs at 26&ndash;40 MHz write clock)</td></tr>
+              <tr><td><strong>Interface</strong></td><td>SPI (ESP32-S3 supports up to 80 MHz; ILI9341 typically runs at 26–40 MHz write clock)</td></tr>
               <tr><td><strong>Touch</strong></td><td>CST816 capacitive (I2C) or XPT2046 resistive (SPI)</td></tr>
               <tr><td><strong>Cost</strong></td><td>~$5</td></tr>
               <tr><td><strong>UI Framework</strong></td><td>LVGL v9 (C, open source)</td></tr>
@@ -104,21 +104,21 @@
           <li><strong>Idle screen:</strong> Temperature (large font, readable at arm's length), heating progress bar, ready indicator, active profile name</li>
           <li><strong>Shot screen:</strong> Real-time pressure/flow graph, shot timer, weight, phase indicator, target vs actual overlays</li>
           <li><strong>Minimal touch:</strong> Start/stop (physical switch preferred), profile select (swipe or tap), tare scales</li>
-          <li><strong>Profile quick-select:</strong> TFT shows up to 5 favorite profiles for fast switching. Full list available via web app. This satisfies REQ-U-003 (&le; 3 taps from idle) even with many saved profiles.</li>
+          <li><strong>Profile quick-select:</strong> TFT shows up to 5 favorite profiles for fast switching. Full list available via web app. This satisfies REQ-U-003 (≤ 3 taps from idle) even with many saved profiles.</li>
         </ul>
 
         <h4>Physical Switch vs. Remote Control Priority</h4>
         <p>The Gaggia's physical brew switch is wired to a GPIO input and acts as the <strong>primary authority</strong>:</p>
         <ul>
-          <li>Physical switch ON &rarr; shot starts (regardless of software state)</li>
-          <li>Physical switch OFF &rarr; shot stops immediately (overrides any WebSocket <code>start_shot</code> command)</li>
-          <li>WebSocket <code>start_shot</code> &rarr; only honored if physical switch is already ON (switch acts as a hardware enable gate)</li>
+          <li>Physical switch ON → shot starts (regardless of software state)</li>
+          <li>Physical switch OFF → shot stops immediately (overrides any WebSocket <code>start_shot</code> command)</li>
+          <li>WebSocket <code>start_shot</code> → only honored if physical switch is already ON (switch acts as a hardware enable gate)</li>
           <li>This means the physical switch is a hardware-level safety interlock: turning it off always stops the shot.</li>
         </ul>
 
         <p>What it does <strong>NOT</strong> show (use web app instead):</p>
         <ul>
-          <li>Profile editor (too complex for 320&times;240)</li>
+          <li>Profile editor (too complex for 320×240)</li>
           <li>PID tuning</li>
           <li>Shot history</li>
           <li>System settings</li>
@@ -134,9 +134,9 @@
             </thead>
             <tbody>
               <tr><td><strong>Server</strong></td><td>ESP32 AsyncWebServer (Core 1)</td></tr>
-              <tr><td><strong>Real-time</strong></td><td>WebSocket (~20&ndash;50 ms latency on LAN)</td></tr>
-              <tr><td><strong>Storage</strong></td><td>LittleFS partition (2&ndash;4 MB for web assets)</td></tr>
-              <tr><td><strong>Framework</strong></td><td>TBD &mdash; Svelte or Preact (small bundle, good DX)</td></tr>
+              <tr><td><strong>Real-time</strong></td><td>WebSocket (~20–50 ms latency on LAN)</td></tr>
+              <tr><td><strong>Storage</strong></td><td>LittleFS partition (2–4 MB for web assets)</td></tr>
+              <tr><td><strong>Framework</strong></td><td>TBD — Svelte or Preact (small bundle, good DX)</td></tr>
               <tr><td><strong>Auth</strong></td><td>Read-only endpoints: none (open). Write/command endpoints: session token required (see below). OTA/restart/factory-reset: OTA password required.</td></tr>
             </tbody>
           </table>
@@ -145,7 +145,7 @@
         <p>Pages:</p>
         <ul>
           <li><strong>Dashboard:</strong> Live shot view (mirrors TFT but with larger, richer graphs)</li>
-          <li><strong>Profiles:</strong> Full profile editor &mdash; phase list, transition curves, stop conditions, temperature targets. Visual preview of the profile curve.</li>
+          <li><strong>Profiles:</strong> Full profile editor — phase list, transition curves, stop conditions, temperature targets. Visual preview of the profile curve.</li>
           <li><strong>History:</strong> Shot log with overlay comparison, export to CSV/JSON</li>
           <li><strong>Settings:</strong> PID tuning with live response graph, WiFi config, BLE scales pairing, display settings</li>
           <li><strong>Update:</strong> OTA firmware upload</li>
@@ -167,19 +167,19 @@ GET    /api/shots                 # List shot history
 GET    /api/shots/:id             # Get shot detail with datapoints
 POST   /api/ota                   # Upload firmware binary</code></pre>
 
-        <h4>WebSocket (<code>ws://&lt;ip&gt;/ws</code>) for Real-Time Data</h4>
-<pre><code>// Server &rarr; Client: sensor data (every 100ms during shot)
+        <h4>WebSocket (<code>ws://&lt;ip>/ws</code>) for Real-Time Data</h4>
+<pre><code>// Server → Client: sensor data (every 100ms during shot)
 {"type": "shot_data", "t": 12300, "temp": 93.1, "pressure": 8.7,
  "flow": 2.1, "weight": 24.3, "target_p": 9.0, "target_f": -1, "phase": 2}
 
-// Server &rarr; Client: state changes
+// Server → Client: state changes
 {"type": "state", "mode": "brewing", "ready": true, "temp": 93.0}
 
-// Client &rarr; Server: commands
+// Client → Server: commands
 {"type": "command", "action": "tare_scales"}
 {"type": "command", "action": "set_active_profile", "id": 3}</code></pre>
 
-        <p>This same WebSocket API is what a future iOS/native app would connect to &mdash; so building the web app first doesn't lock out native apps later.</p>
+        <p>This same WebSocket API is what a future iOS/native app would connect to — so building the web app first doesn't lock out native apps later.</p>
 
         <!-- 8.6 Upgrade Paths -->
         <h3 id="upgrade-paths">Upgrade Paths (Evaluate During Prototyping)</h3>
@@ -194,7 +194,7 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
               <tr>
                 <td>Is 2.8" too small to read during a shot?</td>
                 <td>Rarely look at it</td>
-                <td>Larger 3.5" ILI9488 (480&times;320), same SPI interface, same LVGL code. ~$8</td>
+                <td>Larger 3.5" ILI9488 (480×320), same SPI interface, same LVGL code. ~$8</td>
               </tr>
               <tr>
                 <td>Do I never look at the machine display?</td>
@@ -214,7 +214,7 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
               <tr>
                 <td>Is the web app latency noticeable?</td>
                 <td>Shots feel laggy on phone</td>
-                <td>Acceptable &mdash; this is monitoring, not control. The TFT runs from local data with zero latency.</td>
+                <td>Acceptable — this is monitoring, not control. The TFT runs from local data with zero latency.</td>
               </tr>
             </tbody>
           </table>
@@ -234,12 +234,12 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
                 <td>Proprietary, vendor lock-in, UART bottleneck, dated UI, Windows-only editor</td>
               </tr>
               <tr>
-                <td><strong>OLED 128&times;64</strong></td>
-                <td>Too small for a pressure graph &mdash; can only show text. If we're mounting a display, the TFT is $3 more and far more useful</td>
+                <td><strong>OLED 128×64</strong></td>
+                <td>Too small for a pressure graph — can only show text. If we're mounting a display, the TFT is $3 more and far more useful</td>
               </tr>
               <tr>
                 <td><strong>No machine display</strong></td>
-                <td>Reasonable but untested &mdash; we don't know yet if reaching for a phone every shot is annoying. The $5 TFT hedges this bet</td>
+                <td>Reasonable but untested — we don't know yet if reaching for a phone every shot is annoying. The $5 TFT hedges this bet</td>
               </tr>
               <tr>
                 <td><strong>ESP32-P4 + 7" MIPI</strong></td>
@@ -264,10 +264,10 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
         <h3 id="core-principles">Core Principles</h3>
         <ol>
           <li><strong>Single firmware image</strong> (assuming ESP32-S3 single MCU)</li>
-          <li><strong>FreeRTOS tasks with strict core affinity</strong> &mdash; real-time on Core 0, everything else on Core 1</li>
+          <li><strong>FreeRTOS tasks with strict core affinity</strong> — real-time on Core 0, everything else on Core 1</li>
           <li><strong>Message-passing between tasks</strong> (FreeRTOS queues, not shared globals)</li>
-          <li><strong>Testable</strong> &mdash; core logic (PID, profiles, predictive weight) in pure C++ with no hardware dependencies</li>
-          <li><strong>Safe by default</strong> &mdash; watchdog, fail-safe states, validated inputs</li>
+          <li><strong>Testable</strong> — core logic (PID, profiles, predictive weight) in pure C++ with no hardware dependencies</li>
+          <li><strong>Safe by default</strong> — watchdog, fail-safe states, validated inputs</li>
         </ol>
 
         <!-- 9.2 Task Architecture -->
@@ -282,7 +282,7 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
         <div class="callout callout-info">
           <span class="material-symbols-rounded icon-sm">info</span>
           <div>
-            <strong>PlatformIO note:</strong> PlatformIO compiles <code>src/</code> recursively by default when using the Arduino framework, but some configurations require explicit <code>build_src_filter</code>. If subdirectories are not compiled, add to <code>platformio.ini</code>: <code>build_src_filter = +&lt;*&gt; +&lt;**/*.cpp&gt;</code>. Alternatively, organize modules as PlatformIO library components under <code>lib/</code> (each with its own <code>library.json</code>).
+            <strong>PlatformIO note:</strong> PlatformIO compiles <code>src/</code> recursively by default when using the Arduino framework, but some configurations require explicit <code>build_src_filter</code>. If subdirectories are not compiled, add to <code>platformio.ini</code>: <code>build_src_filter = +&lt;*> +&lt;**/*.cpp></code>. Alternatively, organize modules as PlatformIO library components under <code>lib/</code> (each with its own <code>library.json</code>).
           </div>
         </div>
 
@@ -602,7 +602,7 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
 
         <p><strong>Priority rationale:</strong> ControlTask must never be preempted by UI or BLE work. WatchdogTask is higher priority so it can always check ControlTask health. UITask, BLETask, and PersistenceTask are non-safety and run on Core 1 where WiFi/BLE stacks also reside.</p>
         <p><strong>Stack size rationale:</strong> UITask needs 16 KB for LVGL rendering buffers and web server response construction. ControlTask needs 8 KB for PID computation, profile engine, and sensor reading. BLETask needs 8 KB for NimBLE stack. PersistenceTask and WatchdogTask are lightweight.</p>
-        <p><strong>ISR latency budget:</strong> The zero-cross detection ISR must fire within 100 &micro;s of the zero-cross event to maintain &lt; 1% phase-angle error at 50 Hz. The ISR body must complete in &lt; 10 &micro;s (set a flag and return). The actual triac firing is handled by a hardware timer started from the ISR.</p>
+        <p><strong>ISR latency budget:</strong> The zero-cross detection ISR must fire within 100 µs of the zero-cross event to maintain &lt; 1% phase-angle error at 50 Hz. The ISR body must complete in &lt; 10 µs (set a flag and return). The actual triac firing is handled by a hardware timer started from the ISR.</p>
 
         <!-- 9.8 Third-Party Library Dependencies -->
         <h3 id="library-dependencies">Third-Party Library Dependencies</h3>
@@ -615,7 +615,7 @@ POST   /api/ota                   # Upload firmware binary</code></pre>
             <tbody>
               <tr>
                 <td><strong>ESP-IDF</strong></td>
-                <td>&ge; 5.1</td>
+                <td>≥ 5.1</td>
                 <td>Apache 2.0</td>
                 <td>Base framework (WiFi, BLE, SPI, I2C, NVS, OTA, FreeRTOS)</td>
               </tr>
@@ -675,8 +675,8 @@ littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + 
         <h4>Space Budget Within LittleFS (~10 MB)</h4>
         <ul>
           <li>Web app assets (HTML/CSS/JS, gzipped): ~200 KB</li>
-          <li>Shot profiles (20 &times; ~2 KB JSON): ~40 KB</li>
-          <li>Shot logs (50 &times; ~20 KB with datapoints): ~1 MB</li>
+          <li>Shot profiles (20 × ~2 KB JSON): ~40 KB</li>
+          <li>Shot logs (50 × ~20 KB with datapoints): ~1 MB</li>
           <li><strong>Remaining:</strong> ~8.7 MB free for future use (more shot history, custom sounds, etc.)</li>
         </ul>
 
@@ -692,7 +692,7 @@ littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + 
               <tr>
                 <td><strong>RAM (512 KB SRAM, no PSRAM)</strong></td>
                 <td>~350 KB used, ~160 KB free</td>
-                <td>ESP-IDF/WiFi/BLE stack: ~180 KB. LVGL frame buffer (320&times;240&times;2 bytes &times; 2 buffers): ~300 KB &mdash; <strong>PROBLEM: exceeds SRAM.</strong> Must use partial buffer (1/10 screen = ~15 KB) or add PSRAM. FreeRTOS tasks: ~47 KB. Application heap: ~100 KB.</td>
+                <td>ESP-IDF/WiFi/BLE stack: ~180 KB. LVGL frame buffer (320×240×2 bytes × 2 buffers): ~300 KB — <strong>PROBLEM: exceeds SRAM.</strong> Must use partial buffer (1/10 screen = ~15 KB) or add PSRAM. FreeRTOS tasks: ~47 KB. Application heap: ~100 KB.</td>
               </tr>
               <tr>
                 <td><strong>PSRAM (8 MB, if WROVER)</strong></td>
@@ -701,7 +701,7 @@ littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + 
               </tr>
               <tr>
                 <td><strong>SPI2 bandwidth</strong></td>
-                <td>Display: 26 MHz &times; 16 bpp = 52 MB/s theoretical, ~15 FPS at 320&times;240 full redraw</td>
+                <td>Display: 26 MHz × 16 bpp = 52 MB/s theoretical, ~15 FPS at 320×240 full redraw</td>
                 <td>Shared with nothing (dedicated bus). Adequate.</td>
               </tr>
               <tr>
@@ -716,7 +716,7 @@ littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + 
               </tr>
               <tr>
                 <td><strong>I2C1 bandwidth</strong></td>
-                <td>ADS1115: 128 SPS &times; 2 bytes = 256 B/s</td>
+                <td>ADS1115: 128 SPS × 2 bytes = 256 B/s</td>
                 <td>Dedicated bus. Negligible.</td>
               </tr>
               <tr>
@@ -768,7 +768,7 @@ littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + 
 
     error_prev = error</code></pre>
 
-        <p><strong>Form rationale:</strong> Positional (not velocity) form is used because the PID output directly represents the actuator command (0&ndash;100% SSR duty or pump power). Velocity form is preferred for integrating actuators (e.g., motor position) but unnecessary here.</p>
+        <p><strong>Form rationale:</strong> Positional (not velocity) form is used because the PID output directly represents the actuator command (0–100% SSR duty or pump power). Velocity form is preferred for integrating actuators (e.g., motor position) but unnecessary here.</p>
 
         <h4>Derivative Filter</h4>
         <p>A first-order low-pass filter on the derivative term prevents noise amplification:</p>
@@ -785,7 +785,7 @@ littlefs,   data, spiffs,  0x610000, 0x9F0000, ~10MB -- web assets + profiles + 
 
         <!-- Transition Curves -->
         <h4 id="transition-curves">Transition Curves</h4>
-        <p>The phase profiler interpolates between <code>target.start</code> and <code>target.end</code> over <code>duration_ms</code> using a normalized parameter <code>t &isin; [0, 1]</code>:</p>
+        <p>The phase profiler interpolates between <code>target.start</code> and <code>target.end</code> over <code>duration_ms</code> using a normalized parameter <code>t ∈ [0, 1]</code>:</p>
 
 <pre><code>t = elapsed_ms / duration_ms    (clamped to [0, 1])
 
@@ -822,7 +822,7 @@ Output: triac firing delay in microseconds after zero-cross
             <ul>
               <li>How puck resistance is computed per sample (pressure_bar / flow_ml_per_s)</li>
               <li>What smoothing filter is applied (moving average? EMA? window size?)</li>
-              <li>Complete decision tree: initial state &rarr; monitoring &rarr; output detected &rarr; weight estimation active</li>
+              <li>Complete decision tree: initial state → monitoring → output detected → weight estimation active</li>
               <li>How estimated weight is computed from flow integral minus puck absorption</li>
               <li>Calibration parameters and their default values</li>
               <li>Boundary conditions: what happens if flow sensor fails? If pressure sensor fails?</li>
@@ -847,17 +847,17 @@ Output: triac firing delay in microseconds after zero-cross
           <div>
             <strong>TODO(diagram):</strong> Add a sequence diagram showing the complete shot lifecycle:
             <ol>
-              <li>User presses brew switch &rarr; GPIO interrupt &rarr; ControlTask reads switch state</li>
-              <li>ControlTask transitions state machine READY &rarr; BREWING</li>
-              <li>Profile engine starts Phase 0 &rarr; sets pump target</li>
+              <li>User presses brew switch → GPIO interrupt → ControlTask reads switch state</li>
+              <li>ControlTask transitions state machine READY → BREWING</li>
+              <li>Profile engine starts Phase 0 → sets pump target</li>
               <li>ControlTask reads sensors, runs PID, writes actuators (every 5 ms)</li>
-              <li>SensorReading published to queue &rarr; UITask updates TFT + WebSocket</li>
-              <li>ShotDataPoint published to queue &rarr; UITask streams to WebSocket clients</li>
-              <li>Phase stop condition met &rarr; profile engine advances to Phase 1</li>
-              <li>Global stop condition met (weight target) &rarr; state machine BREWING &rarr; DONE</li>
+              <li>SensorReading published to queue → UITask updates TFT + WebSocket</li>
+              <li>ShotDataPoint published to queue → UITask streams to WebSocket clients</li>
+              <li>Phase stop condition met → profile engine advances to Phase 1</li>
+              <li>Global stop condition met (weight target) → state machine BREWING → DONE</li>
               <li>Pump OFF, solenoid OPEN (3-way valve releases pressure)</li>
               <li>ShotRecord written to LittleFS by PersistenceTask</li>
-              <li>3-second timeout &rarr; state machine DONE &rarr; IDLE</li>
+              <li>3-second timeout → state machine DONE → IDLE</li>
             </ol>
           </div>
         </div>
@@ -872,10 +872,10 @@ Output: triac firing delay in microseconds after zero-cross
             <ol>
               <li>AC mains sine wave (50 Hz = 20 ms period, 10 ms half-cycle)</li>
               <li>Zero-cross detector output (pulse at each zero crossing)</li>
-              <li>Zero-cross ISR fires &rarr; starts hardware timer with delay_us</li>
-              <li>Timer expires &rarr; triac gate pulse (10 &micro;s)</li>
+              <li>Zero-cross ISR fires → starts hardware timer with delay_us</li>
+              <li>Timer expires → triac gate pulse (10 µs)</li>
               <li>Triac conducts for remainder of half-cycle</li>
-              <li>Next zero-cross &rarr; triac turns off naturally &rarr; repeat</li>
+              <li>Next zero-cross → triac turns off naturally → repeat</li>
             </ol>
           </div>
         </div>
@@ -889,12 +889,12 @@ Output: triac firing delay in microseconds after zero-cross
             <strong>TODO(diagram):</strong> Add a sequence diagram showing:
             <ol>
               <li>BLETask starts scan on boot</li>
-              <li>Discovers advertised device &rarr; calls <code>matchesAdvertisement()</code> on each registered driver</li>
-              <li>Matching driver found &rarr; connect &rarr; discover services/characteristics</li>
+              <li>Discovers advertised device → calls <code>matchesAdvertisement()</code> on each registered driver</li>
+              <li>Matching driver found → connect → discover services/characteristics</li>
               <li>Subscribe to weight notification characteristic</li>
               <li>Driver sends heartbeat per schedule (varies by scale brand)</li>
-              <li>Weight notifications arrive &rarr; publish ScaleReading to queue</li>
-              <li>Disconnect detection &rarr; auto-reconnect after 5 s backoff</li>
+              <li>Weight notifications arrive → publish ScaleReading to queue</li>
+              <li>Disconnect detection → auto-reconnect after 5 s backoff</li>
             </ol>
           </div>
         </div>
@@ -918,8 +918,8 @@ Output: triac firing delay in microseconds after zero-cross
       <!-- DOCUMENT FOOTER -->
       <!-- ================================================================ -->
       <footer class="doc-footer">
-        <p><em>Document version: 3.0 &mdash; Updated: 2026-02-16</em></p>
-        <p><em>Project: Open Espresso &mdash; open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
         <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
       </footer>
 

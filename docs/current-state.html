@@ -168,15 +168,15 @@
 
         <p>The STM32 main loop (<code>gaggiuino.cpp</code>) runs the following sequence:</p>
         <ul>
-          <li><strong><code>sensorsRead()</code></strong> &mdash; Poll all sensors via ADS1115
+          <li><strong><code>sensorsRead()</code></strong> — Poll all sensors via ADS1115
             <ul>
               <li>Temperature (MAX31855 thermocouple)</li>
               <li>Pressure (analog transducer, 0-12 bar)</li>
               <li>Flow (hall-effect pulse counter)</li>
             </ul>
           </li>
-          <li><strong><code>lcdRefresh()</code></strong> &mdash; Send sensor state to ESP32 via UART</li>
-          <li><strong><code>systemHealthCheck()</code></strong> &mdash; Monitor for faults
+          <li><strong><code>lcdRefresh()</code></strong> — Send sensor state to ESP32 via UART</li>
+          <li><strong><code>systemHealthCheck()</code></strong> — Monitor for faults
             <ul>
               <li>Thermocouple fault detection</li>
               <li>Pressure sensor fault detection</li>
@@ -184,10 +184,10 @@
           </li>
           <li><strong>State Machine:</strong>
             <ul>
-              <li><strong>BREW_MODE_4</strong> (espresso_profiling) &mdash; PhaseProfiler, pressure PID, flow PID, PredictiveWeight</li>
+              <li><strong>BREW_MODE_4</strong> (espresso_profiling) — PhaseProfiler, pressure PID, flow PID, PredictiveWeight</li>
               <li><strong>FLUSH_MODE</strong> (backflushing)</li>
               <li><strong>DESCALE_MODE</strong> (descaling)</li>
-              <li><strong>STEAM_MODE</strong> (steam control) &mdash; temperature PID for steam setpoint</li>
+              <li><strong>STEAM_MODE</strong> (steam control) — temperature PID for steam setpoint</li>
             </ul>
           </li>
         </ul>
@@ -199,15 +199,15 @@
 
         <p>The ESP32 main loop (<code>esp_comms.cpp</code>) handles:</p>
         <ul>
-          <li><strong>UART receive/transmit</strong> &mdash; Communication with STM32</li>
-          <li><strong>Display (Nextion)</strong> &mdash; Touch display protocol
+          <li><strong>UART receive/transmit</strong> — Communication with STM32</li>
+          <li><strong>Display (Nextion)</strong> — Touch display protocol
             <ul>
               <li>Page navigation</li>
               <li>Profile editing UI</li>
               <li>Shot graph rendering</li>
             </ul>
           </li>
-          <li><strong>BLE Scales</strong> &mdash; Bluetooth Low Energy
+          <li><strong>BLE Scales</strong> — Bluetooth Low Energy
             <ul>
               <li>Acaia</li>
               <li>Felicita</li>
@@ -215,21 +215,21 @@
               <li>Bookoo (multiple models)</li>
             </ul>
           </li>
-          <li><strong>EEPROM Management</strong> &mdash; Persistent configuration
+          <li><strong>EEPROM Management</strong> — Persistent configuration
             <ul>
               <li><code>eepromValues_t</code> struct (entire config blob)</li>
             </ul>
           </li>
-          <li><strong>Web OTA</strong> &mdash; Over-the-air firmware update</li>
+          <li><strong>Web OTA</strong> — Over-the-air firmware update</li>
         </ul>
 
         <h3>PID Controllers</h3>
         <p>The system uses <strong>four separate PID instances</strong> (<code>PidController</code> class):</p>
         <ol>
-          <li><strong>Brew temperature PID</strong> &mdash; controls boiler SSR during brewing</li>
-          <li><strong>Steam temperature PID</strong> &mdash; controls boiler SSR during steaming</li>
-          <li><strong>Pressure PID</strong> &mdash; controls pump dimmer level during profiled shots</li>
-          <li><strong>Flow PID</strong> &mdash; controls pump dimmer level when profiling by flow</li>
+          <li><strong>Brew temperature PID</strong> — controls boiler SSR during brewing</li>
+          <li><strong>Steam temperature PID</strong> — controls boiler SSR during steaming</li>
+          <li><strong>Pressure PID</strong> — controls pump dimmer level during profiled shots</li>
+          <li><strong>Flow PID</strong> — controls pump dimmer level when profiling by flow</li>
         </ol>
 
         <p>The PID implementation is in <code>lib/Common/pid.h</code>. It is a basic P-I-D with:</p>
@@ -241,9 +241,9 @@
         </ul>
 
         <div class="callout callout-info">
-          <span class="material-symbols-rounded" style="color: var(--color-primary);">info</span>
+          <span class="material-symbols-rounded icon-primary">info</span>
           <div>
-            <strong>Cascaded Controller:</strong> The "flow PID" operates as a cascaded controller &mdash; it computes a pressure setpoint from flow error, then the pump targets that pressure. This is done by assigning the flow PID output as the pressure setpoint.
+            <strong>Cascaded Controller:</strong> The "flow PID" operates as a cascaded controller — it computes a pressure setpoint from flow error, then the pump targets that pressure. This is done by assigning the flow PID output as the pressure setpoint.
           </div>
         </div>
 
@@ -288,7 +288,7 @@
         <ol>
           <li>Monitoring puck resistance (pressure / flow ratio)</li>
           <li>Tracking pressure drop patterns</li>
-          <li>Using empirical thresholds (2.1 bar = headspace full, puck resistance &gt; 1100 mbar&middot;s/g where resistance = pressure / flow rate)</li>
+          <li>Using empirical thresholds (2.1 bar = headspace full, puck resistance > 1100 mbar·s/g where resistance = pressure / flow rate)</li>
           <li>Force-starting after 65ml pumped</li>
         </ol>
         <p>This allows dose-by-weight functionality even without BLE scales connected.</p>
@@ -300,7 +300,7 @@
       <section class="section" id="section-4">
         <h2>4. Communication Protocol</h2>
 
-        <h3>UART Protocol (STM32 &harr; ESP32)</h3>
+        <h3>UART Protocol (STM32 ↔ ESP32)</h3>
         <ul>
           <li><strong>Baud rate:</strong> 115200</li>
           <li><strong>Format:</strong> Binary packets with markers</li>
@@ -320,17 +320,17 @@
             <tbody>
               <tr>
                 <td><code>SensorStateSnapshot</code></td>
-                <td>STM32 &rarr; ESP32</td>
+                <td>STM32 → ESP32</td>
                 <td>Temperature, pressure, flow, weight, pump clicks, state</td>
               </tr>
               <tr>
                 <td><code>Profile</code></td>
-                <td>ESP32 &rarr; STM32</td>
+                <td>ESP32 → STM32</td>
                 <td>Full shot profile (phases, transitions, stop conditions)</td>
               </tr>
               <tr>
                 <td><code>ShotSnapshot</code></td>
-                <td>STM32 &rarr; ESP32</td>
+                <td>STM32 → ESP32</td>
                 <td>Real-time shot data for graphing</td>
               </tr>
               <tr>
@@ -340,12 +340,12 @@
               </tr>
               <tr>
                 <td><code>RemoteScalesWeight</code></td>
-                <td>ESP32 &rarr; STM32</td>
+                <td>ESP32 → STM32</td>
                 <td>BLE scale reading</td>
               </tr>
               <tr>
                 <td><code>Notification</code></td>
-                <td>STM32 &rarr; ESP32</td>
+                <td>STM32 → ESP32</td>
                 <td>Toast notifications to display</td>
               </tr>
             </tbody>
@@ -394,35 +394,35 @@
 
         <h4>System Settings</h4>
         <ul>
-          <li><code>lcdSleep</code> &mdash; display timeout</li>
-          <li><code>warmupState</code> &mdash; enable warmup mode</li>
-          <li><code>brewDeltaState</code> &mdash; temperature compensation during brew</li>
-          <li><code>scalesF1</code> / <code>scalesF2</code> &mdash; scale calibration factors</li>
+          <li><code>lcdSleep</code> — display timeout</li>
+          <li><code>warmupState</code> — enable warmup mode</li>
+          <li><code>brewDeltaState</code> — temperature compensation during brew</li>
+          <li><code>scalesF1</code> / <code>scalesF2</code> — scale calibration factors</li>
         </ul>
 
         <h4>Boiler PID Tuning</h4>
         <ul>
           <li><code>steamSetPoint</code>, <code>offsetTemp</code></li>
-          <li><code>hpwr</code>, <code>mainDivider</code>, <code>brewDivider</code> &mdash; PID gains (obfuscated names)</li>
-          <li><code>kProportional</code>, <code>kIntegral</code>, <code>kDerivative</code> &mdash; newer named gains</li>
+          <li><code>hpwr</code>, <code>mainDivider</code>, <code>brewDivider</code> — PID gains (obfuscated names)</li>
+          <li><code>kProportional</code>, <code>kIntegral</code>, <code>kDerivative</code> — newer named gains</li>
         </ul>
 
         <h4>Profile Settings (x5 profiles)</h4>
         <ul>
           <li><code>preinfusionState</code>, <code>preinfusionBar</code>, <code>preinfusionFlowState</code></li>
           <li><code>soakState</code>, <code>soakTimePressure</code>, <code>soakTimeFlow</code>, <code>soakKeepPressure</code></li>
-          <li><code>hotWaterFlowState</code> &mdash; for flow-profiled extraction</li>
+          <li><code>hotWaterFlowState</code> — for flow-profiled extraction</li>
           <li><code>preinfusionFlowVol</code>, <code>preinfusionFlowPressureTarget</code></li>
-          <li><code>tfProfileStart</code>, <code>tfProfileEnd</code>, <code>tfProfileHold</code>, <code>tfProfileSteep</code> &mdash; temperature profiling at different shot phases</li>
-          <li><code>profilingState</code> &mdash; enable multi-phase profiling</li>
-          <li><code>phases[]</code> &mdash; array of phase configurations</li>
-          <li><code>globalStopConditions</code> &mdash; time, weight, volume limits</li>
+          <li><code>tfProfileStart</code>, <code>tfProfileEnd</code>, <code>tfProfileHold</code>, <code>tfProfileSteep</code> — temperature profiling at different shot phases</li>
+          <li><code>profilingState</code> — enable multi-phase profiling</li>
+          <li><code>phases[]</code> — array of phase configurations</li>
+          <li><code>globalStopConditions</code> — time, weight, volume limits</li>
         </ul>
 
         <h4>Versioning</h4>
         <ul>
-          <li><code>versionId</code> &mdash; schema version for migration</li>
-          <li><code>EEPROM_DATA_VERSION</code> &mdash; compile-time version</li>
+          <li><code>versionId</code> — schema version for migration</li>
+          <li><code>EEPROM_DATA_VERSION</code> — compile-time version</li>
         </ul>
 
         <h3>Profile Storage</h3>
@@ -447,46 +447,46 @@
         <h3>Critical Safety Issues</h3>
 
         <div class="callout callout-safety">
-          <span class="material-symbols-rounded" style="color: var(--color-danger);">warning</span>
+          <span class="material-symbols-rounded icon-danger">warning</span>
           <div>
-            <strong>1. No watchdog timer</strong> &mdash; If the main loop hangs, the boiler SSR stays in its last state. A stuck-on SSR with no watchdog = uncontrolled heating.
+            <strong>1. No watchdog timer</strong> — If the main loop hangs, the boiler SSR stays in its last state. A stuck-on SSR with no watchdog = uncontrolled heating.
           </div>
         </div>
 
         <div class="callout callout-safety">
-          <span class="material-symbols-rounded" style="color: var(--color-danger);">warning</span>
+          <span class="material-symbols-rounded icon-danger">warning</span>
           <div>
-            <strong>2. Temperature fault handling is incomplete</strong> &mdash; <code>systemHealthCheck()</code> detects thermocouple faults but the recovery path is unclear. The system should enter a hard fail-safe (all outputs off) on any temperature sensor failure.
+            <strong>2. Temperature fault handling is incomplete</strong> — <code>systemHealthCheck()</code> detects thermocouple faults but the recovery path is unclear. The system should enter a hard fail-safe (all outputs off) on any temperature sensor failure.
           </div>
         </div>
 
         <div class="callout callout-safety">
-          <span class="material-symbols-rounded" style="color: var(--color-danger);">warning</span>
+          <span class="material-symbols-rounded icon-danger">warning</span>
           <div>
-            <strong>3. No boiler dry-fire protection</strong> &mdash; There is no logic to detect an empty boiler. If the machine runs without water, the heating element will overheat.
+            <strong>3. No boiler dry-fire protection</strong> — There is no logic to detect an empty boiler. If the machine runs without water, the heating element will overheat.
           </div>
         </div>
 
         <h3>Architectural Issues</h3>
         <ol start="4">
-          <li><strong>Massive flat config struct</strong> &mdash; <code>eepromValues_t</code> is a single monolithic struct with 200+ fields, many with cryptic names (<code>hpwr</code>, <code>mainDivider</code>, <code>brewDivider</code>). No schema validation. Binary-blob serialization means any struct change breaks all saved configs.</li>
-          <li><strong>Tight coupling between MCUs</strong> &mdash; The STM32 and ESP32 share header files and must be flashed together. Version skew between the two causes undefined behavior.</li>
-          <li><strong>Global mutable state</strong> &mdash; Extensive use of global variables, especially in <code>gaggiuino.cpp</code> and <code>predictive_weight.h</code>. The <code>PredictiveWeight</code> header file defines global variables (<code>predictiveTargetReached</code>, <code>predictivePreinfusionFinishedCheck</code>) that will cause multiple-definition errors if included from more than one translation unit.</li>
-          <li><strong>No unit tests</strong> &mdash; The <code>test/</code> directory is empty. PID tuning, profile phase transitions, and predictive weight logic have zero test coverage.</li>
-          <li><strong>Inconsistent naming</strong> &mdash; Mix of <code>camelCase</code>, <code>snake_case</code>, Hungarian notation, and abbreviations. Profile fields use opaque names (<code>tfProfileStart</code> = temperature profile at start, <code>hpwr</code> = heater power? PID high power?).</li>
+          <li><strong>Massive flat config struct</strong> — <code>eepromValues_t</code> is a single monolithic struct with 200+ fields, many with cryptic names (<code>hpwr</code>, <code>mainDivider</code>, <code>brewDivider</code>). No schema validation. Binary-blob serialization means any struct change breaks all saved configs.</li>
+          <li><strong>Tight coupling between MCUs</strong> — The STM32 and ESP32 share header files and must be flashed together. Version skew between the two causes undefined behavior.</li>
+          <li><strong>Global mutable state</strong> — Extensive use of global variables, especially in <code>gaggiuino.cpp</code> and <code>predictive_weight.h</code>. The <code>PredictiveWeight</code> header file defines global variables (<code>predictiveTargetReached</code>, <code>predictivePreinfusionFinishedCheck</code>) that will cause multiple-definition errors if included from more than one translation unit.</li>
+          <li><strong>No unit tests</strong> — The <code>test/</code> directory is empty. PID tuning, profile phase transitions, and predictive weight logic have zero test coverage.</li>
+          <li><strong>Inconsistent naming</strong> — Mix of <code>camelCase</code>, <code>snake_case</code>, Hungarian notation, and abbreviations. Profile fields use opaque names (<code>tfProfileStart</code> = temperature profile at start, <code>hpwr</code> = heater power? PID high power?).</li>
         </ol>
 
         <h3>Protocol Issues</h3>
         <ol start="9">
-          <li><strong>UART protocol has no CRC or error correction</strong> &mdash; The <code>McuComms</code> layer uses start/end markers but no checksum. Corrupted bytes between the MCUs could cause misinterpreted commands (e.g., a corrupted pump power value).</li>
-          <li><strong>No protocol versioning</strong> &mdash; If the UART message format changes between firmware versions, there is no negotiation or version check. Flashing one MCU without the other causes silent failures.</li>
+          <li><strong>UART protocol has no CRC or error correction</strong> — The <code>McuComms</code> layer uses start/end markers but no checksum. Corrupted bytes between the MCUs could cause misinterpreted commands (e.g., a corrupted pump power value).</li>
+          <li><strong>No protocol versioning</strong> — If the UART message format changes between firmware versions, there is no negotiation or version check. Flashing one MCU without the other causes silent failures.</li>
         </ol>
 
         <h3>Code Quality Issues</h3>
         <ol start="11">
-          <li><strong>Header files with implementation</strong> &mdash; Multiple <code>.h</code> files contain full method implementations and global variable definitions (e.g., <code>predictive_weight.h</code>, <code>scales_handler.h</code>). This breaks the one-definition rule if headers are included in multiple translation units.</li>
-          <li><strong>Magic numbers throughout</strong> &mdash; Thresholds like <code>2.1f</code> (pressure), <code>1100.f</code> (resistance), <code>65.f</code> (ml pumped), <code>500.f</code> (resistance delta) are hardcoded without named constants or documentation of their empirical derivation.</li>
-          <li><strong>EEPROM migration is fragile</strong> &mdash; <code>eeprom_data.cpp</code> has version-specific migration code, but adding or removing a field requires careful manual migration logic. There is no schema hash or field-level versioning.</li>
+          <li><strong>Header files with implementation</strong> — Multiple <code>.h</code> files contain full method implementations and global variable definitions (e.g., <code>predictive_weight.h</code>, <code>scales_handler.h</code>). This breaks the one-definition rule if headers are included in multiple translation units.</li>
+          <li><strong>Magic numbers throughout</strong> — Thresholds like <code>2.1f</code> (pressure), <code>1100.f</code> (resistance), <code>65.f</code> (ml pumped), <code>500.f</code> (resistance delta) are hardcoded without named constants or documentation of their empirical derivation.</li>
+          <li><strong>EEPROM migration is fragile</strong> — <code>eeprom_data.cpp</code> has version-specific migration code, but adding or removing a field requires careful manual migration logic. There is no schema hash or field-level versioning.</li>
         </ol>
       </section>
 
@@ -508,8 +508,8 @@
       <!-- DOCUMENT FOOTER -->
       <!-- ================================================================ -->
       <footer class="doc-footer">
-        <p><em>Document version: 3.0 &mdash; Updated: 2026-02-16</em></p>
-        <p><em>Project: Open Espresso &mdash; open-source firmware for Gaggia Classic (pre-2015)</em></p>
+        <p><em>Document version: 3.0 — Updated: 2026-02-16</em></p>
+        <p><em>Project: Open Espresso — open-source firmware for Gaggia Classic (pre-2015)</em></p>
         <p>This HTML version references SVG diagrams in <code>diagrams/</code> and uses an external stylesheet at <code>css/design-document.css</code>. The authoritative source is <a href="DESIGN_DOCUMENT.md">DESIGN_DOCUMENT.md</a>.</p>
       </footer>
 

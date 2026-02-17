@@ -70,7 +70,7 @@
       <!-- ICD-01: REST + WebSocket API -->
       <!-- ================================================================ -->
       <section class="section" id="icd-01">
-        <h3>ICD-01: REST + WebSocket API (Firmware &harr; Web App / Mobile App)</h3>
+        <h3>ICD-01: REST + WebSocket API (Firmware ↔ Web App / Mobile App)</h3>
 
         <p><strong>Who uses this:</strong> Web app developers, mobile app developers, third-party integrators.</p>
 
@@ -102,60 +102,60 @@
           </table>
         </div>
 
-        <pre><code>Base URL: http://&lt;device-ip&gt;/api/v1
+        <pre><code>Base URL: http://&lt;device-ip>/api/v1
 
 ── Auth ──────────────────────────────────────────────────────
 
-POST   /auth                     &rarr; 201 {"token": "abc123..."}
+POST   /auth                     → 201 {"token": "abc123..."}
   Body: {"pin": "1234"}          (see Authentication Model below)
 
 ── Profiles ──────────────────────────────────────────────────
 
-GET    /profiles                 &rarr; 200 ProfileSummary[]
-GET    /profiles/:id             &rarr; 200 Profile
-POST   /profiles                 &rarr; 201 Profile (created)            [Auth: session token]
-PUT    /profiles/:id             &rarr; 200 Profile (updated)            [Auth: session token]
-DELETE /profiles/:id             &rarr; 204                              [Auth: session token]
+GET    /profiles                 → 200 ProfileSummary[]
+GET    /profiles/:id             → 200 Profile
+POST   /profiles                 → 201 Profile (created)            [Auth: session token]
+PUT    /profiles/:id             → 200 Profile (updated)            [Auth: session token]
+DELETE /profiles/:id             → 204                              [Auth: session token]
 
 ── Active Profile ────────────────────────────────────────────
 
-GET    /active-profile           &rarr; 200 {"id": N, "name": "..."}
-PUT    /active-profile           &rarr; 200 {"id": N}                    [Auth: session token]
+GET    /active-profile           → 200 {"id": N, "name": "..."}
+PUT    /active-profile           → 200 {"id": N}                    [Auth: session token]
   Body: {"id": N}
 
 ── System Config ─────────────────────────────────────────────
 
-GET    /config                   &rarr; 200 SystemConfig (wifi_password redacted)
-PUT    /config                   &rarr; 200 SystemConfig (updated)       [Auth: session token]
-  Body: Partial&lt;SystemConfig&gt;    (only changed fields required)
+GET    /config                   → 200 SystemConfig (wifi_password redacted)
+PUT    /config                   → 200 SystemConfig (updated)       [Auth: session token]
+  Body: Partial&lt;SystemConfig>    (only changed fields required)
 
 ── Shot History ──────────────────────────────────────────────
 
-GET    /shots                    &rarr; 200 ShotSummary[] (newest first)
-GET    /shots/:id                &rarr; 200 ShotRecord (with datapoints)
-DELETE /shots/:id                &rarr; 204                              [Auth: session token]
-GET    /shots/:id/export         &rarr; 200 CSV download (Content-Type: text/csv)
+GET    /shots                    → 200 ShotSummary[] (newest first)
+GET    /shots/:id                → 200 ShotRecord (with datapoints)
+DELETE /shots/:id                → 204                              [Auth: session token]
+GET    /shots/:id/export         → 200 CSV download (Content-Type: text/csv)
 
 ── Data Export/Import ────────────────────────────────────────
 
-GET    /export                   &rarr; 200 {"config": ..., "profiles": [...], "shots": [...]}
-POST   /profiles/import          &rarr; 201 Profile (created)            [Auth: session token]
+GET    /export                   → 200 {"config": ..., "profiles": [...], "shots": [...]}
+POST   /profiles/import          → 201 Profile (created)            [Auth: session token]
   Body: Profile JSON (validated per REQ-D-002)
 
 ── System ────────────────────────────────────────────────────
 
-GET    /system/info              &rarr; 200 {"firmware": "1.0.0", "uptime_s": N,
+GET    /system/info              → 200 {"firmware": "1.0.0", "uptime_s": N,
                                     "free_heap": N, "wifi_rssi": N,
                                     "api_version": "v1", "defaults_active": true}
-POST   /system/ota               &rarr; 200 {"ok": true}                [Auth: OTA password]
-  Header: X-OTA-Password: &lt;password&gt;    (REQUIRED - see REQ-F-012)
+POST   /system/ota               → 200 {"ok": true}                [Auth: OTA password]
+  Header: X-OTA-Password: &lt;password>    (REQUIRED - see REQ-F-012)
   Returns 401 if password missing/incorrect.
   Returns 400 if firmware binary is invalid.
   Password is stored in NVS, set via /config.
-POST   /system/restart           &rarr; 200 {"ok": true}                [Auth: OTA password]
-  Header: X-OTA-Password: &lt;password&gt;    (REQUIRED - destructive action)
-POST   /system/factory-reset     &rarr; 200 {"ok": true}                [Auth: OTA password]
-  Header: X-OTA-Password: &lt;password&gt;    (REQUIRED - destructive action)</code></pre>
+POST   /system/restart           → 200 {"ok": true}                [Auth: OTA password]
+  Header: X-OTA-Password: &lt;password>    (REQUIRED - destructive action)
+POST   /system/factory-reset     → 200 {"ok": true}                [Auth: OTA password]
+  Header: X-OTA-Password: &lt;password>    (REQUIRED - destructive action)</code></pre>
 
         <p><strong>Response types:</strong></p>
 
@@ -202,7 +202,7 @@ POST /api/v1/auth
   Response: {"token": "abc123..."}     // 32-byte random token, valid until reboot
 
 All write endpoints require:
-  Header: Authorization: Bearer &lt;token&gt;
+  Header: Authorization: Bearer &lt;token>
   Returns 401 if missing/invalid.
 
 WebSocket commands require auth message after connection:
@@ -223,18 +223,18 @@ POST /system/factory-reset: Max 1 per 60 seconds.</code></pre>
 
         <h4 id="websocket-protocol">WebSocket Protocol</h4>
 
-        <pre><code>Endpoint: ws://&lt;device-ip&gt;/ws
+        <pre><code>Endpoint: ws://&lt;device-ip>/ws
 
-── Server &rarr; Client messages ──────────────────────────────────
+── Server → Client messages ──────────────────────────────────
 
 Sensor state (sent every 1s when idle, every 100ms during shot):
 {
   "type": "sensors",
-  "temp": 93.1,            // boiler temperature (&deg;C)
+  "temp": 93.1,            // boiler temperature (°C)
   "pressure": 8.7,         // brew pressure (bar)
   "flow": 2.1,             // pump flow rate (ml/s)
   "weight": 24.3,          // scale weight (g), -1 if no scales
-  "target_temp": 93.0,     // target temperature (&deg;C)
+  "target_temp": 93.0,     // target temperature (°C)
   "target_pressure": 9.0,  // target pressure (bar), -1 if N/A
   "target_flow": -1,       // target flow (ml/s), -1 if N/A
   "pump_pct": 72,          // pump power percentage (0-100)
@@ -267,7 +267,7 @@ Shot complete:
   "total_volume_ml": 44.1
 }
 
-── Client &rarr; Server messages ──────────────────────────────────
+── Client → Server messages ──────────────────────────────────
 
 Auth (must be first command after connection for write access):
   {"type": "auth", "token": "abc123..."}
@@ -300,7 +300,7 @@ If no pong received within 15s, server closes connection.</code></pre>
       <!-- ICD-02: Internal Event Bus -->
       <!-- ================================================================ -->
       <section class="section" id="icd-02">
-        <h3>ICD-02: Internal Event Bus (Control Task &harr; UI Task &harr; BLE Task)</h3>
+        <h3>ICD-02: Internal Event Bus (Control Task ↔ UI Task ↔ BLE Task)</h3>
 
         <p><strong>Who uses this:</strong> Firmware contributors adding new features, new sensor support, or new actuators.</p>
 
@@ -308,7 +308,7 @@ If no pong received within 15s, server closes connection.</code></pre>
 
         <h4>Specification</h4>
 
-        <pre><code>// ── Queue: sensor_data_queue (Control &rarr; UI, BLE &rarr; Control) ──
+        <pre><code>// ── Queue: sensor_data_queue (Control → UI, BLE → Control) ──
 
 struct SensorData {
   uint32_t timestamp_ms;
@@ -323,7 +323,7 @@ struct SensorData {
 };
 // Queue depth: 4 items. Overwrite oldest on full.
 
-// ── Queue: shot_data_queue (Control &rarr; UI for graphing/logging) ──
+// ── Queue: shot_data_queue (Control → UI for graphing/logging) ──
 
 struct ShotDataPoint {
   uint32_t time_ms;        // relative to shot start
@@ -338,7 +338,7 @@ struct ShotDataPoint {
 };
 // Queue depth: 16 items. Overwrite oldest on full.
 
-// ── Queue: command_queue (UI &rarr; Control) ──
+// ── Queue: command_queue (UI → Control) ──
 
 enum class CommandType {
   START_SHOT,
@@ -365,7 +365,7 @@ struct Command {
 };
 // Queue depth: 8 items. Block on full (commands must not be dropped).
 
-// ── Queue: scale_data_queue (BLE Task &rarr; Control Task) ──
+// ── Queue: scale_data_queue (BLE Task → Control Task) ──
 
 struct ScaleData {
   float weight_g;
@@ -374,7 +374,7 @@ struct ScaleData {
 };
 // Queue depth: 4 items. Overwrite oldest on full.
 
-// ── Queue: notification_queue (Control &rarr; UI) ──
+// ── Queue: notification_queue (Control → UI) ──
 
 struct Notification {
   enum Level { INFO, WARNING, ERROR } level;
@@ -594,7 +594,7 @@ public:
             "type": "number",
             "minimum": 0,
             "maximum": 170,
-            "description": "Target brew temperature for this phase. Max 170&deg;C (REQ-S-004)."
+            "description": "Target brew temperature for this phase. Max 170°C (REQ-S-004)."
           },
           "stop_conditions": {
             "type": "object",
@@ -754,7 +754,7 @@ Sensor signals: 3.3V (ADS1115 and MAX31855 are 3.3V compatible)
 
 Power
 ─────
-5V input from internal PSU &rarr; 3.3V LDO &rarr; ESP32-S3 + sensors
+5V input from internal PSU → 3.3V LDO → ESP32-S3 + sensors
 Display: 3.3V logic, backlight PWM via GPIO (actual backlight power varies by module — check module schematic)
 Total current draw (est.): ~300mA @ 3.3V (ESP32 + WiFi + display + sensors)</code></pre>
 
@@ -802,7 +802,7 @@ Total current draw (est.): ~300mA @ 3.3V (ESP32 + WiFi + display + sensors)</cod
 │   ├── test/
 │   └── platformio.ini
 │
-├── webapp/                    # Web app (separate build, output &rarr; firmware/data/)
+├── webapp/                    # Web app (separate build, output → firmware/data/)
 │   ├── src/
 │   ├── package.json
 │   └── vite.config.js         # (or svelte.config.js)
